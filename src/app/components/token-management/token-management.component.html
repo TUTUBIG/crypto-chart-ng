@@ -1,0 +1,121 @@
+<div class="token-management">
+  <!-- Header -->
+  <div class="management-header">
+    <h2>🚀 Token Management & Chart Widget</h2>
+    <p>Browse and search tokens. Click a token to select it (chart will hide). Use "Show Chart" to display the chart.</p>
+  </div>
+
+  <div class="management-content">
+    <!-- Left Panel - Token List -->
+    <div class="token-panel">
+      <div class="panel-header">
+        <h3>Available Tokens</h3>
+        <div class="panel-actions">
+          @if (currentToken()) {
+            <div class="current-token-info">
+              <span class="current-token-label">Selected:</span>
+              <span class="current-token-symbol">{{ currentToken()!.token_symbol || currentToken()!.symbol }}</span>
+              @if (!showChart()) {
+                <button class="show-chart-btn" (click)="showChartForToken(currentToken()!)">
+                  Show Chart
+                </button>
+              }
+            </div>
+          }
+        </div>
+      </div>
+      
+      <app-token-list
+        [selectedTokenId]="currentToken()?.tokenId"
+        (onTokenSelect)="handleTokenClick($event)"
+        className="token-list-panel"
+      />
+    </div>
+
+    <!-- Right Panel - Single Widget -->
+    <div class="widgets-panel">
+      <div class="panel-header">
+        <h3>Chart Widget</h3>
+        @if (currentToken() && showChart()) {
+          <div class="widget-token-info">
+            <span class="widget-token-symbol">{{ currentToken()!.token_symbol || currentToken()!.symbol }}</span>
+            <span class="widget-token-name">{{ currentToken()!.token_name || currentToken()!.name }}</span>
+          </div>
+        }
+      </div>
+
+      <div class="widgets-container">
+        @if (showChart() && widgetConfig()) {
+          <div class="single-widget-container">
+            <div class="fixed-widget-frame">
+              <app-crypto-chart
+                [tokenId]="widgetConfig()!.tokenId"
+                [height]="600"
+                [width]="800"
+                [autoConnect]="true"
+                [theme]="'light'"
+                (onError)="onChartError($event)"
+                (onDataUpdate)="onChartDataUpdate($event)"
+                (onTrade)="onChartTrade($event)"
+                (onConnectionChange)="onChartConnectionChange($event)"
+              />
+            </div>
+          </div>
+        } @else {
+          <div class="no-widget">
+            <div class="no-widget-icon">📊</div>
+            @if (currentToken()) {
+              <h4>Chart Hidden</h4>
+              <p>Token selected: {{ currentToken()!.token_symbol || currentToken()!.symbol }}</p>
+              <p>Click "Show Chart" button to display the chart for this token</p>
+            } @else {
+              <h4>No token selected</h4>
+              <p>Click on a token from the list to select it</p>
+            }
+            <div class="no-widget-tips">
+              <h5>How to use:</h5>
+              <ul>
+                <li>Click any token in the list to select it (chart will hide)</li>
+                <li>Use the search bar to find specific tokens</li>
+                <li>Sort tokens by different criteria</li>
+                <li>Click "Show Chart" to display the chart for the selected token</li>
+              </ul>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Current Token Info -->
+  @if (currentToken()) {
+    <div class="selected-token-info">
+      <h4>Current Chart: {{ currentToken()!.token_symbol || currentToken()!.symbol }}</h4>
+      <div class="token-details">
+        <div class="detail-item">
+          <span class="detail-label">Name:</span>
+          <span class="detail-value">{{ currentToken()!.token_name || currentToken()!.name }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Address:</span>
+          <span class="detail-value token-address">{{ currentToken()!.token_address }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">24h Volume:</span>
+          <span class="detail-value">
+            ${{ currentToken()!.daily_volume_usd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+          </span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Chain ID:</span>
+          <span class="detail-value">{{ currentToken()!.chain_id }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Token ID:</span>
+          <span class="detail-value token-id">{{ currentToken()!.id }}</span>
+        </div>
+      </div>
+    </div>
+  }
+</div>
+

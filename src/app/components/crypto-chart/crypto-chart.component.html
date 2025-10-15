@@ -1,0 +1,61 @@
+<div class="crypto-chart-widget" [class.dark]="theme === 'dark'" [style.width.px]="width" [style.height.px]="height">
+  <!-- Widget Header -->
+  <div class="widget-header">
+    <div class="widget-title-section">
+      <div class="price-info">
+        <div class="price-container">
+          @if (isWebSocketConnected) {
+            <span class="live-indicator">
+              <span class="live-dot"></span>
+              <span class="live-text">LIVE</span>
+            </span>
+          }
+          <span class="current-price" 
+                [class.price-up]="priceDirection === 'up'" 
+                [class.price-down]="priceDirection === 'down'"
+                [class.price-live]="isWebSocketConnected">
+            ${{ formatPrice(currentPrice) }}
+            @if (priceDirection === 'up') {
+              <span class="price-arrow">▲</span>
+            }
+            @if (priceDirection === 'down') {
+              <span class="price-arrow">▼</span>
+            }
+          </span>
+        </div>
+        @if (priceChange !== null) {
+          <span class="price-change" 
+                [class.positive]="priceChange >= 0" 
+                [class.negative]="priceChange < 0">
+            {{ formatPercentage(priceChange) }}
+          </span>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Error Message -->
+  @if (chartData.error) {
+    <div class="widget-error">
+      <span class="error-icon">⚠️</span>
+      <span class="error-text">{{ chartData.error }}</span>
+      <button class="error-retry" (click)="refreshData()">
+        Retry
+      </button>
+    </div>
+  }
+
+  <!-- Loading Overlay -->
+  @if (chartData.isLoading) {
+    <div class="widget-loading">
+      <div class="loading-spinner"></div>
+      <span class="loading-text">Loading chart data...</span>
+    </div>
+  }
+
+  <!-- Chart Container -->
+  <div class="widget-chart-container">
+    <div #chartContainer class="chart-container"></div>
+  </div>
+</div>
+
