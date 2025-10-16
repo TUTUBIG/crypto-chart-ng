@@ -40,17 +40,17 @@ export class ApiService {
           })
         })
       );
-      
+
       // Check if response data is empty or nil
       if (!response || response.length === 0) {
         console.log('API returned nil/empty data for historical candles');
         return [];
       }
-      
+
       // Decode base64 string to binary data
       console.log('Decoding base64 historical candles data, length:', response.length);
       const binaryData = base64ToUint8Array(response);
-      
+
       // Deserialize binary data
       const candles = deserializeCandleDataFromBytes(binaryData);
       console.log("Historical candles received:", candles.length, candles);
@@ -78,16 +78,16 @@ export class ApiService {
           })
         })
       );
-      
+
       // Check if response data is empty or nil
       if (!response || response.length === 0) {
         console.log('API returned nil/empty data for single candle');
         return null;
       }
-      
+
       // Decode base64 string to binary data
       const binaryData = base64ToUint8Array(response);
-      
+
       // Deserialize binary data (single candle)
       const candles = deserializeCandleDataFromBytes(binaryData);
       console.log("Single candle received:", candles);
@@ -96,7 +96,7 @@ export class ApiService {
         console.log('No candle data in response');
         return null;
       }
-      
+
       return candles[0]; // Return the first (and only) candle
     } catch (error) {
       console.error('Error fetching single candle:', error);

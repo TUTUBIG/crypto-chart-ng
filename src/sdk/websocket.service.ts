@@ -20,6 +20,7 @@ export class WebSocketService {
   private connectionTimeout: number | null = null;
   private subscribeId: string | null = null;
   private isSubscribed = false;
+  private shouldReconnect = true; // Flag to control reconnection behavior
 
   // Callbacks
   private onTradeCallback: TradeCallback | null = null;
@@ -43,10 +44,17 @@ export class WebSocketService {
       return;
     }
     
-    // Delay connection to avoid race conditions
-    setTimeout(() => {
-      this.connect();
-    }, 1000);
+    if (this.ws?.readyState === WebSocket.CONNECTING) {
+      console.log('WebSocket connection already in progress');
+      return;
+    }
+    
+    // Enable reconnection and reset attempts
+    this.shouldReconnect = true;
+    this.reconnectAttempts = 0;
+    
+    // Connect immediately
+    this.connect();
   }
 
   private connect(): void {
@@ -61,13 +69,14 @@ export class WebSocketService {
       
       this.ws = new WebSocket(this.config.url);
       
-      // Set connection timeout
+      // Set connection timeout - give more time for slow networks
       this.connectionTimeout = window.setTimeout(() => {
         if (this.ws && this.ws.readyState === WebSocket.CONNECTING) {
-          console.log('WebSocket connection timeout, closing...');
+          console.error('WebSocket connection timeout after 10 seconds');
           this.ws.close();
+          this.isConnecting = false;
         }
-      }, 5000); // 5 second timeout
+      }, 10000); // 10 second timeout
       
       this.ws.onopen = () => {
         console.log('WebSocket connected successfully');
@@ -118,7 +127,13 @@ export class WebSocketService {
         }
         
         this.onDisconnectCallback?.('disconnected');
-        this.attemptReconnect();
+        
+        // Only attempt reconnection if it's not a manual disconnect
+        if (this.shouldReconnect) {
+          this.attemptReconnect();
+        } else {
+          console.log('WebSocket closed - reconnection disabled');
+        }
       };
 
       this.ws.onerror = (error) => {
@@ -302,13 +317,32 @@ export class WebSocketService {
 
   // Disconnect WebSocket
   public disconnect(): void {
+    console.log('Disconnecting WebSocket...');
+    
+    // Disable reconnection to prevent reconnection attempts
+    this.shouldReconnect = false;
+    
+    // Clear any pending connection timeout
+    if (this.connectionTimeout) {
+      clearTimeout(this.connectionTimeout);
+      this.connectionTimeout = null;
+    }
+    
+    // Close WebSocket if it exists
     if (this.ws) {
-      this.ws.close();
+      // Only close if not already closing/closed
+      if (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING) {
+        console.log('Closing WebSocket connection');
+        this.ws.close();
+      }
       this.ws = null;
     }
-    // Reset subscription state
+    
+    // Reset state
+    this.isConnecting = false;
     this.subscribeId = null;
     this.isSubscribed = false;
+    this.reconnectAttempts = 0;
   }
 
   // Check if WebSocket is connected

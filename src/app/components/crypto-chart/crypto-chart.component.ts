@@ -37,8 +37,8 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
   // Optional display props
   @Input() symbol?: string;
   @Input() title?: string;
-  @Input() height: number = 400;
-  @Input() width: number = 800;
+  @Input() height?: number; // Optional - will use container height if not provided
+  @Input() width?: number; // Optional - will use container width if not provided
 
   // Widget configuration
   @Input() showControls: boolean = false;
@@ -71,6 +71,7 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
   private previousCandleCount: number = 0;
   private isInitialLoad: boolean = true;
   private isInitialized: boolean = false;
+  private resizeObserver: ResizeObserver | null = null;
 
   constructor(
     private apiService: ApiService,
@@ -83,12 +84,17 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngAfterViewInit(): void {
     this.initializeChart();
+    this.setupResizeObserver();
     if (this.sdk) {
       this.loadTokenData(this.tokenId);
     }
   }
 
   ngOnDestroy(): void {
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = null;
+    }
     if (this.sdk) {
       this.sdk.destroy();
     }
@@ -151,9 +157,10 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
     const isDark = this.theme === 'dark';
     const containerEl = this.chartContainer.nativeElement;
 
-    // Get container dimensions
-    const chartWidth = this.width;
-    const chartHeight = this.height - 60; // Subtract header height
+    // Get container dimensions - use container size if width/height not provided
+    const containerRect = containerEl.getBoundingClientRect();
+    const chartWidth = this.width || containerRect.width || 800;
+    const chartHeight = this.height || containerRect.height || 400;
 
     // Create new chart
     this.chart = createChart(containerEl, {
@@ -200,6 +207,41 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
       wickUpColor: isDark ? '#00d4aa' : '#26a69a',
       wickDownColor: isDark ? '#ff6b6b' : '#ef5350',
     });
+  }
+
+  private setupResizeObserver(): void {
+    if (!this.chartContainer) return;
+
+    const containerEl = this.chartContainer.nativeElement;
+
+    this.resizeObserver = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        if (entry.target === containerEl) {
+          this.resizeChart();
+        }
+      }
+    });
+
+    this.resizeObserver.observe(containerEl);
+  }
+
+  private resizeChart(): void {
+    if (!this.chart || !this.chartContainer) return;
+
+    const containerEl = this.chartContainer.nativeElement;
+    const containerRect = containerEl.getBoundingClientRect();
+
+    // Use provided width/height or container dimensions
+    const newWidth = this.width || containerRect.width || 800;
+    const newHeight = this.height || containerRect.height || 400;
+
+    // Only resize if dimensions are valid
+    if (newWidth > 0 && newHeight > 0) {
+      this.chart.applyOptions({
+        width: newWidth,
+        height: newHeight,
+      });
+    }
   }
 
   private async loadTokenData(tokenId: string): Promise<void> {
@@ -284,7 +326,18 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private handleChartUpdate(data: ChartData): void {
-    console.log('📥 Component: Received chart update from SDK');
+    console.log('📥 Component: Received chart update from SDK with', data.candles.length, 'candles');
+    
+    if (data.candles.length > 0) {
+      const latestCandle = data.candles[data.candles.length - 1];
+      console.log('   Latest candle in update:', {
+        timestamp: latestCandle.Timestamp,
+        open: latestCandle.OpenPrice,
+        high: latestCandle.HighPrice,
+        low: latestCandle.LowPrice,
+        close: latestCandle.ClosePrice
+      });
+    }
 
     // Ensure loading is set to false when we receive data
     const updatedData = {
@@ -298,6 +351,8 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
     const previousCount = this.previousCandleCount;
     const currentCount = updatedData.candles.length;
     const candleCountDiff = currentCount - previousCount;
+    
+    console.log('   Candle count: previous =', previousCount, ', current =', currentCount, ', diff =', candleCountDiff);
 
     // Define threshold for incremental updates
     const MAX_INCREMENTAL_CANDLES = 50;
@@ -320,12 +375,10 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
           this.updateSingleCandle(latestCandle);
           console.log('➕ Chart: Added NEW candle at', latestCandle.Timestamp, 'Close:', latestCandle.ClosePrice, 'Total:', currentCount);
         } else if (candleCountDiff > 1 && candleCountDiff <= MAX_INCREMENTAL_CANDLES) {
-          // Multiple new candles added - update incrementally
-          console.log(`➕ Chart: Adding ${candleCountDiff} new candles incrementally`);
-          for (let i = previousCount; i < currentCount; i++) {
-            const newCandle = updatedData.candles[i];
-            this.updateSingleCandle(newCandle);
-          }
+          // Multiple new candles added - do full refresh to ensure proper rendering
+          // Using full refresh for multiple candles is more reliable than incremental updates
+          console.log(`➕ Chart: Adding ${candleCountDiff} new candles via full refresh`);
+          this.updateChart(updatedData);
           console.log(`➕ Chart: Added ${candleCountDiff} new candles. Total: ${currentCount}`);
         } else {
           // Large gap detected - do full refresh
@@ -392,12 +445,19 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
       const tradeMinuteTimestamp = Math.floor(trade.TradeTime / 60) * 60;
       const latestCandleTimestamp = latestCandle.Timestamp;
 
-      // Check if trade belongs to the current candle (within 2 minutes)
+      // Check if trade belongs to the current candle
+      // Note: SDK handles candle creation, component only visualizes
       const timeDiff = tradeMinuteTimestamp - latestCandleTimestamp;
-      const isCurrentCandle = timeDiff >= 0; //&& timeDiff <= 120;
+      
+      console.log('💰 Component: Processing trade with timeDiff:', timeDiff, 'seconds');
 
-      if (isCurrentCandle) {
-        // Update the latest candle with the trade data
+      // Only handle exact matches or very recent trades (within 2 minutes)
+      // Let SDK handle everything else (SDK has authoritative data)
+      const isExactOrVeryRecent = timeDiff >= 0 && timeDiff <= 120;
+
+      if (isExactOrVeryRecent) {
+        console.log('✅ Component: Trade within range - updating visualization immediately');
+        // Update the latest candle with the trade data for immediate visual feedback
         const updatedCandle: Candle = {
           ...latestCandle,
           ClosePrice: trade.Price,
@@ -413,17 +473,17 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
         // Update the chart visualization immediately
         this.updateSingleCandle(updatedCandle);
 
-        console.log('📊 Chart: Updated latest candle with real-time trade:', {
+        console.log('📊 Component: Updated candle visualization:', {
           price: trade.Price,
           timestamp: tradeMinuteTimestamp,
           candleTimestamp: latestCandleTimestamp
         });
+      } else if (timeDiff > 120) {
+        console.log('⏭️  Component: Trade outside range (timeDiff > 120s) - SDK should handle this');
+        console.log('    SDK will create new candle and trigger handleChartUpdate()');
+        // Don't update anything here - wait for SDK to create new candle and notify
       } else {
-        console.log('⚠️  Chart: Trade timestamp mismatch - waiting for SDK to add new candle:', {
-          tradeMinuteTimestamp,
-          latestCandleTimestamp,
-          timeDiff
-        });
+        console.log('⚠️  Component: Trade is older than latest candle (timeDiff < 0) - ignoring');
       }
     }
 
@@ -465,9 +525,20 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private updateSingleCandle(candle: Candle): void {
-    if (!this.candlestickSeries) return;
+    if (!this.candlestickSeries) {
+      console.error('❌ Cannot update candle: candlestickSeries is null');
+      return;
+    }
 
     const candleData = this.convertCandleToChartData(candle);
+    console.log('📈 Updating chart with candle data:', {
+      time: candleData.time,
+      open: candleData.open,
+      high: candleData.high,
+      low: candleData.low,
+      close: candleData.close
+    });
+    
     this.candlestickSeries.update(candleData);
 
     if (this.chart) {

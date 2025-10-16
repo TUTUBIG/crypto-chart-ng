@@ -50,8 +50,6 @@
             <div class="fixed-widget-frame">
               <app-crypto-chart
                 [tokenId]="widgetConfig()!.tokenId"
-                [height]="600"
-                [width]="800"
                 [autoConnect]="true"
                 [theme]="'light'"
                 (onError)="onChartError($event)"

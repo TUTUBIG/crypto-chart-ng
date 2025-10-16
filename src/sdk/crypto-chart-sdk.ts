@@ -1,18 +1,18 @@
 import {
-  Candle,
-  RealTimeTrade,
-  ChartData,
-  ChartConfig,
-  WebSocketConfig,
   ApiConfig,
-  SubscriptionStatus,
+  Candle,
+  ChartConfig,
+  ChartData,
   ChartUpdateCallback,
-  TradeCallback,
+  ConnectionCallback,
   ErrorCallback,
-  ConnectionCallback
+  RealTimeTrade,
+  SubscriptionStatus,
+  TradeCallback,
+  WebSocketConfig
 } from './types';
-import { ApiService } from './api.service';
-import { WebSocketService } from './websocket.service';
+import {ApiService} from './api.service';
+import {WebSocketService} from './websocket.service';
 
 /**
  * CryptoChartSDK - Main SDK class that orchestrates data fetching and real-time updates
@@ -82,7 +82,7 @@ export class CryptoChartSDK {
       // Verify token ID is still set after async operation
       console.log('[SDK] After fetching, currentTokenId is:', this.currentTokenId);
 
-      // Set up periodic updates
+      // Set up periodic updates as fallback (will only run when WebSocket is disconnected)
       this.startPeriodicUpdates();
 
       this.notifyChartUpdate();
@@ -274,7 +274,9 @@ export class CryptoChartSDK {
 
   private setupWebSocketCallbacks(): void {
     this.wsService.onTrade((trade: RealTimeTrade) => {
+      console.log('🔄 [SDK] WebSocket trade received, processing in SDK first...');
       this.handleRealTimeTrade(trade);
+      console.log('🔄 [SDK] SDK processing complete, notifying component callback...');
       this.onTradeCallback?.(trade);
     });
 
@@ -284,10 +286,12 @@ export class CryptoChartSDK {
     });
 
     this.wsService.onConnect(() => {
+      console.log('🔗 [SDK] WebSocket connected - real-time updates active');
       this.notifyConnectionChange('connected');
     });
 
     this.wsService.onDisconnect(() => {
+      console.log('🔌 [SDK] WebSocket disconnected - periodic polling will continue as fallback');
       this.notifyConnectionChange('disconnected');
     });
 
@@ -304,10 +308,9 @@ export class CryptoChartSDK {
       amount: trade.Amount,
       currentCandleCount: this.candles.length
     });
-    const now = new Date();
-    this.lastUpdate = now;
+    this.lastUpdate = new Date();
 
-    // If no candles exist yet, trades are still being captured by the trade callback
+    // If no candles exist yet, trades are still being captured by the trade callback,
     // but we can't update candles until they're loaded
     if (this.candles.length === 0) {
       console.log('⚠️  [SDK] No candles loaded yet - trade received but cannot update candles (data still loading)');
@@ -330,13 +333,15 @@ export class CryptoChartSDK {
     });
 
     // Check if trade belongs to the latest candle or is within a reasonable time window
-    // Allow trades that are in the current minute or slightly ahead (up to 2 minutes)
     const timeDiff = tradeMinuteTimestamp - latestCandleTimestamp;
-    const isCurrentOrRecentCandle = timeDiff >= 0 && timeDiff <= 120; // Within 2 minutes
+    const isExactMatch = timeDiff === 0; // Trade is for the current candle
+    const isRecentCandle = timeDiff > 0 && timeDiff <= 120; // Within 2 minutes ahead
+    const isFutureCandle = timeDiff > 120 && timeDiff <= 600; // 2-10 minutes ahead (new candle period)
 
-    if (isCurrentOrRecentCandle) {
+    if (isExactMatch || isRecentCandle) {
       // Update existing candle with trade data
-      const updatedCandle: Candle = {
+      // Replace the latest candle with updated one
+      this.candles[this.candles.length - 1] = {
         ...latestCandle,
         ClosePrice: trade.Price, // Update close price with trade price
         HighPrice: Math.max(latestCandle.HighPrice, trade.Price), // Update high if trade price is higher
@@ -344,9 +349,6 @@ export class CryptoChartSDK {
         VolumeIn: latestCandle.VolumeIn + trade.USD, // Add to volume in
         VolumeOut: latestCandle.VolumeOut + trade.Amount, // Add to volume out
       };
-
-      // Replace the latest candle with updated one
-      this.candles[this.candles.length - 1] = updatedCandle;
 
       console.log('✅ [SDK] Updated latest candle with trade:', {
         tradeTime: trade.TradeTime,
@@ -359,27 +361,64 @@ export class CryptoChartSDK {
 
       // Notify chart to update
       this.notifyChartUpdate();
-    } else if (timeDiff < 0) {
-      // Trade is older than our oldest relevant data
-      // Cannot update oldest data, so remove stale candles
-      console.log('🗑️  [SDK] Trade is too old - removing outdated candles:', {
+    } else if (isFutureCandle) {
+      // Trade is for a new candle period - create a new candle
+      console.log('🆕 [SDK] Trade is for new candle period - creating new candle:', {
         tradeMinuteTimestamp: tradeMinuteTimestamp,
         latestCandleTimestamp: latestCandleTimestamp,
         timeDiff: timeDiff
       });
 
-      // Remove candles that are older than what we should keep
-      // Keep only recent candles within a reasonable timeframe
-      const cutoffTimestamp = tradeMinuteTimestamp - (60 * 60); // Keep 1 hour of data minimum
-      const beforeCount = this.candles.length;
-      this.candles = this.candles.filter(candle => candle.Timestamp >= cutoffTimestamp);
+      // Create new candle with the trade data
+      // Use the last candle's close price as the new candle's open price
+      const newCandle: Candle = {
+        Timestamp: tradeMinuteTimestamp,
+        OpenPrice: latestCandle.ClosePrice, // Open with previous close
+        HighPrice: trade.Price,
+        LowPrice: trade.Price,
+        ClosePrice: trade.Price,
+        VolumeIn: trade.USD,
+        VolumeOut: trade.Amount,
+      };
 
-      if (this.candles.length !== beforeCount) {
-        console.log(`🗑️  [SDK] Removed ${beforeCount - this.candles.length} outdated candles (kept ${this.candles.length})`);
-        this.notifyChartUpdate();
+      // Add the new candle
+      this.candles.push(newCandle);
+
+      // Ensure candles are sorted by timestamp
+      this.candles.sort((a, b) => a.Timestamp - b.Timestamp);
+
+      // Find the actual position after sorting
+      const newCandleIndex = this.candles.findIndex(c => c.Timestamp === newCandle.Timestamp);
+
+      console.log(`➕ [SDK] Created NEW candle from trade:`, {
+        timestamp: newCandle.Timestamp,
+        open: newCandle.OpenPrice,
+        close: newCandle.ClosePrice,
+        positionAfterSort: newCandleIndex,
+        totalCandles: this.candles.length,
+        isLastCandle: newCandleIndex === this.candles.length - 1
+      });
+
+      // Remove old data if needed
+      const maxCandles = this.chartConfig.maxCandles || 1000;
+      if (this.candles.length > maxCandles) {
+        const beforeCount = this.candles.length;
+        this.candles = this.candles.slice(-maxCandles);
+        console.log(`🗑️  [SDK] Pruned ${beforeCount - this.candles.length} old candles (keeping latest ${maxCandles})`);
       }
+
+      // Notify chart to update
+      this.notifyChartUpdate();
+    } else if (timeDiff < 0) {
+      // Trade is older than our latest candle - ignore it
+      console.log('⚠️  [SDK] Trade is older than latest candle - ignoring:', {
+        tradeMinuteTimestamp: tradeMinuteTimestamp,
+        latestCandleTimestamp: latestCandleTimestamp,
+        timeDiff: timeDiff
+      });
+      return;
     } else {
-      // Trade is too far in the future (>2min ahead)
+      // Trade is too far in the future (>10min ahead)
       console.log('⏭️  [SDK] Ignoring future trade - too far ahead:', {
         tradeMinuteTimestamp: tradeMinuteTimestamp,
         latestCandleTimestamp: latestCandleTimestamp,
@@ -389,12 +428,19 @@ export class CryptoChartSDK {
     }
   }
 
+  /**
+   * Start periodic polling as fallback mechanism
+   * Note: Polling is skipped when WebSocket is connected since real-time trades
+   * automatically create and update candles. This serves as a fallback for when
+   * WebSocket is disconnected or unavailable.
+   */
   private startPeriodicUpdates(): void {
     if (this.updateInterval) {
       clearInterval(this.updateInterval);
     }
 
     if (this.chartConfig.updateInterval && this.currentTokenId) {
+      console.log(`📅 [SDK] Starting periodic polling (fallback mechanism) every ${this.chartConfig.updateInterval}ms`);
       this.updateInterval = window.setInterval(async () => {
         await this.fetchLatestCandle();
       }, this.chartConfig.updateInterval);
@@ -404,8 +450,14 @@ export class CryptoChartSDK {
   private async fetchLatestCandle(): Promise<void> {
     if (!this.currentTokenId) return;
 
+    // Skip periodic polling if WebSocket is connected (real-time trades handle updates)
+    if (this.wsService.isConnected()) {
+      console.log('⏭️  [SDK] Skipping periodic polling - WebSocket is connected and handling real-time updates');
+      return;
+    }
+
     try {
-      console.log('🔄 [SDK] Fetching latest candle for tokenId:', this.currentTokenId);
+      console.log('🔄 [SDK] Fetching latest candle (WebSocket fallback) for tokenId:', this.currentTokenId);
       const newCandle = await this.apiService.fetchSingleCandle(this.currentTokenId);
 
       if (!newCandle) {
@@ -427,14 +479,9 @@ export class CryptoChartSDK {
       );
 
       if (existingIndex >= 0) {
-        // Update existing candle (same time period, new data)
-        const oldCandle = this.candles[existingIndex];
-        this.candles[existingIndex] = newCandle;
-        console.log(`📝 [SDK] Updated existing candle at index ${existingIndex}:`, {
-          timestamp: newCandle.Timestamp,
-          oldClose: oldCandle.ClosePrice,
-          newClose: newCandle.ClosePrice
-        });
+        // existing candle
+        console.log("[SDK] Skip with old candle")
+        return
       } else {
         // Add new candle (new time period)
         this.candles.push(newCandle);
@@ -443,6 +490,8 @@ export class CryptoChartSDK {
           close: newCandle.ClosePrice,
           totalCandles: this.candles.length
         });
+
+        console.log("-----",this.candles)
 
         // Ensure candles are sorted by timestamp (ascending)
         this.candles.sort((a, b) => a.Timestamp - b.Timestamp);

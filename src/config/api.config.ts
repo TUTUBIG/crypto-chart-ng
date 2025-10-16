@@ -24,7 +24,7 @@ export const API_CONFIG = {
   // Chart configuration
   CHART: {
     MAX_CANDLES: 1440, // Maximum number of candles to keep in memory
-    UPDATE_INTERVAL: 6000, // 1 minutes in milliseconds
+    UPDATE_INTERVAL: 60000, // 1 minute - fallback polling when WebSocket is disconnected
     VOLUME_HEIGHT_PERCENTAGE: 10, // 10% of chart height for volume
   },
 
