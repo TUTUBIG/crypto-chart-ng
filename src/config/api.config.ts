@@ -1,7 +1,7 @@
 // API Configuration for Angular
 export const API_CONFIG = {
   // Base URL for API requests
-  BASE_URL: 'http://localhost:8787',
+  BASE_URL: 'https://crypto-pump.bigtutu.workers.dev',
 
   // API Endpoints
   ENDPOINTS: {
@@ -26,7 +26,7 @@ export const API_CONFIG = {
     WATCHED_TOKENS: '/watched-tokens',
     WATCHED_TOKEN_BY_ID: (id: number) => `/watched-tokens/${id}`,
     ACTIVE_WATCHED_TOKENS: '/watched-tokens/active/all',
-    
+
     // User Preferences
     USER_NOTIFICATION_PREFERENCES: '/user/notification-preferences',
     USER_UNLINK_TELEGRAM: '/user/unlink-telegram',
