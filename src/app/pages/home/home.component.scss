@@ -1,0 +1,372 @@
+.home-page {
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+// Hero Section
+.hero-section {
+  padding: 80px 0 60px;
+  background: linear-gradient(135deg, #ffffff 0%, #f7fafc 100%);
+  color: #1a202c;
+}
+
+.hero-content {
+  max-width: 900px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.hero-title {
+  font-size: 56px;
+  font-weight: 800;
+  line-height: 1.2;
+  margin: 0 0 24px;
+  letter-spacing: -1px;
+
+  @media (max-width: 768px) {
+    font-size: 36px;
+  }
+}
+
+.gradient-text {
+  display: block;
+  background: linear-gradient(90deg, #10b981 0%, #3b82f6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-description {
+  font-size: 20px;
+  line-height: 1.6;
+  margin: 0 0 40px;
+  opacity: 0.95;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+
+  @media (max-width: 768px) {
+    font-size: 16px;
+  }
+}
+
+.hero-actions {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 60px;
+}
+
+.hero-stats {
+  display: flex;
+  gap: 48px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.stat {
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.stat-label {
+  font-size: 14px;
+  opacity: 0.8;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+// Demo Section
+.demo-section {
+  padding: 80px 0;
+  background: #ffffff;
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.section-title {
+  font-size: 40px;
+  font-weight: 700;
+  margin: 0 0 16px;
+  color: #1a202c;
+
+  @media (max-width: 768px) {
+    font-size: 32px;
+  }
+}
+
+.section-description {
+  font-size: 18px;
+  color: #718096;
+  margin: 0;
+}
+
+.demo-preview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+.preview-card {
+  background: #ffffff;
+  padding: 40px 24px;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  text-align: center;
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-8px);
+    border-color: rgba(16, 185, 129, 0.5);
+    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.15);
+  }
+
+  .preview-icon {
+    font-size: 48px;
+    margin-bottom: 20px;
+  }
+
+  h3 {
+    font-size: 22px;
+    margin: 0 0 12px;
+    color: #1a202c;
+  }
+
+  p {
+    font-size: 16px;
+    color: #718096;
+    margin: 0;
+    line-height: 1.6;
+  }
+}
+
+.demo-cta {
+  text-align: center;
+}
+
+// Features Section
+.features-section {
+  padding: 80px 0;
+  background: #f5f7fa;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 32px;
+}
+
+.feature-card {
+  text-align: center;
+  padding: 40px 24px;
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-8px);
+    border-color: rgba(16, 185, 129, 0.5);
+    box-shadow: 0 8px 32px rgba(16, 185, 129, 0.15);
+  }
+}
+
+.feature-icon {
+  font-size: 48px;
+  margin-bottom: 20px;
+}
+
+.feature-title {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0 0 12px;
+  color: #1a202c;
+}
+
+.feature-description {
+  font-size: 16px;
+  line-height: 1.6;
+  color: #718096;
+  margin: 0;
+}
+
+// Use Cases Section
+.usecases-section {
+  padding: 80px 0;
+  background: #ffffff;
+}
+
+.usecases-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 32px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.usecase-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 40px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+}
+
+.usecase-icon {
+  font-size: 64px;
+  margin-bottom: 20px;
+}
+
+.usecase-title {
+  font-size: 28px;
+  font-weight: 700;
+  margin: 0 0 12px;
+  color: #1a202c;
+}
+
+.usecase-description {
+  font-size: 16px;
+  line-height: 1.6;
+  color: #718096;
+  margin: 0 0 24px;
+}
+
+.usecase-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 32px;
+
+  li {
+    padding: 8px 0;
+    color: #4a5568;
+    font-size: 15px;
+  }
+}
+
+// CTA Section
+.cta-section {
+  padding: 100px 0;
+  background: linear-gradient(135deg, #ffffff 0%, #f7fafc 100%);
+  color: #1a202c;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.cta-content {
+  max-width: 800px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.cta-title {
+  font-size: 48px;
+  font-weight: 700;
+  margin: 0 0 16px;
+
+  @media (max-width: 768px) {
+    font-size: 36px;
+  }
+}
+
+.cta-description {
+  font-size: 20px;
+  margin: 0 0 40px;
+  opacity: 0.95;
+}
+
+.cta-actions {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+// Buttons
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 28px;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 16px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+}
+
+.btn-large {
+  padding: 16px 36px;
+  font-size: 18px;
+}
+
+.btn-primary {
+  background: #10b981;
+  color: #ffffff;
+
+  &:hover {
+    background: #059669;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+  }
+}
+
+.btn-secondary {
+  background: #ffffff;
+  color: #1a202c;
+  border: 2px solid rgba(0, 0, 0, 0.15);
+
+  &:hover {
+    background: #f7fafc;
+    border-color: rgba(0, 0, 0, 0.25);
+  }
+}
+
+.btn-outline {
+  background: transparent;
+  color: #10b981;
+  border: 2px solid #10b981;
+
+  &:hover {
+    background: #10b981;
+    color: #ffffff;
+  }
+}
+
+.btn-icon {
+  font-size: 20px;
+}
+
+.btn-arrow {
+  font-size: 20px;
+  transition: transform 0.2s ease;
+}
+
+.btn:hover .btn-arrow {
+  transform: translateX(4px);
+}
+

@@ -19,11 +19,35 @@
   border-bottom: 1px solid #e0e0e0;
 }
 
+.header-title-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
 .token-list-header h3 {
-  margin: 0 0 16px 0;
+  margin: 0;
   font-size: 20px;
   font-weight: 600;
   color: #333333;
+}
+
+.watchlist-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6366f1;
+}
+
+.watchlist-badge .watchlist-icon {
+  font-size: 14px;
 }
 
 .token-list-controls {
@@ -207,6 +231,61 @@
   letter-spacing: 0.3px;
 }
 
+.token-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.watchlist-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  opacity: 0.6;
+}
+
+.watchlist-btn:hover {
+  opacity: 1;
+  background: rgba(99, 102, 241, 0.1);
+  border-color: rgba(99, 102, 241, 0.3);
+  transform: scale(1.1);
+}
+
+.watchlist-btn.active {
+  opacity: 1;
+  background: rgba(99, 102, 241, 0.15);
+  border-color: rgba(99, 102, 241, 0.4);
+}
+
+.watchlist-btn.active:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.token-card.in-watchlist {
+  border-color: rgba(99, 102, 241, 0.3);
+  background: linear-gradient(135deg, #ffffff 0%, rgba(99, 102, 241, 0.03) 100%);
+}
+
+.token-card.in-watchlist::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #6366f1 0%, #a5b4fc 100%);
+}
+
 .token-status {
   font-size: 10px;
 }
@@ -365,6 +444,31 @@
 
 .token-list.dark .token-list-header h3 {
   color: #ffffff;
+}
+
+.dark-theme .watchlist-badge {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: rgba(99, 102, 241, 0.4);
+  color: #a5b4fc;
+}
+
+.dark-theme .watchlist-btn {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-theme .watchlist-btn:hover {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: rgba(99, 102, 241, 0.4);
+}
+
+.dark-theme .watchlist-btn.active {
+  background: rgba(99, 102, 241, 0.2);
+  border-color: rgba(99, 102, 241, 0.5);
+}
+
+.dark-theme .token-card.in-watchlist {
+  border-color: rgba(99, 102, 241, 0.4);
+  background: linear-gradient(135deg, #1a1a1a 0%, rgba(99, 102, 241, 0.05) 100%);
 }
 
 .token-list.dark .search-input,

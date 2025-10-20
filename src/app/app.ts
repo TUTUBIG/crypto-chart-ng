@@ -1,14 +1,52 @@
-import { Component, signal, VERSION } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
-import { TokenManagementComponent } from './components/token-management/token-management.component';
+import { Component } from '@angular/core';
+import {RouterLink, RouterOutlet} from '@angular/router';
+import { HeaderComponent } from './components/header/header.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, TokenManagementComponent],
-  templateUrl: './app.html',
+  standalone: true,
+  imports: [RouterOutlet, HeaderComponent, RouterLink],
+  template: `
+    <div class="app">
+      <app-header />
+      <main class="app-content">
+        <router-outlet />
+      </main>
+      <footer class="app-footer">
+        <div class="footer-container">
+          <div class="footer-content">
+            <div class="footer-brand">
+              <span class="footer-logo">⚡ FiPulse</span>
+              <p class="footer-tagline">Real-time crypto data infrastructure</p>
+            </div>
+            <div class="footer-links">
+              <div class="footer-section">
+                <h4>Product</h4>
+                <a routerLink="/market">Market</a>
+                <a routerLink="/watch">Watchlist</a>
+                <a routerLink="/developer">API Docs</a>
+              </div>
+              <div class="footer-section">
+                <h4>Company</h4>
+                <a href="#">About</a>
+                <a href="#">Blog</a>
+                <a href="#">Careers</a>
+              </div>
+              <div class="footer-section">
+                <h4>Support</h4>
+                <a href="#">Help Center</a>
+                <a href="#">Contact</a>
+                <a href="#">Status</a>
+              </div>
+            </div>
+          </div>
+          <div class="footer-bottom">
+            <p>&copy; 2025 FiPulse. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
+    </div>
+  `,
   styleUrl: './app.css'
 })
-export class App {
-  protected readonly title = signal('Crypto Chart - Angular');
-  protected readonly version = VERSION.full;
-}
+export class App {}

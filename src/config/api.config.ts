@@ -1,7 +1,7 @@
 // API Configuration for Angular
 export const API_CONFIG = {
   // Base URL for API requests
-  BASE_URL: 'https://crypto-pump.bigtutu.workers.dev',
+  BASE_URL: 'http://localhost:8787',
 
   // API Endpoints
   ENDPOINTS: {
@@ -13,6 +13,25 @@ export const API_CONFIG = {
 
     // WebSocket endpoint for real-time data
     WEBSOCKET: 'wss://crypto-pump.bigtutu.workers.dev/ws',
+
+    // Authentication
+    AUTH_SEND_CODE: '/auth/send-code',
+    AUTH_REGISTER: '/auth/register',
+    AUTH_LOGIN: '/auth/login',
+    AUTH_REFRESH: '/auth/refresh',
+    AUTH_LOGOUT: '/auth/logout',
+    AUTH_ME: '/auth/me',
+
+    // Watched Tokens
+    WATCHED_TOKENS: '/watched-tokens',
+    WATCHED_TOKEN_BY_ID: (id: number) => `/watched-tokens/${id}`,
+    ACTIVE_WATCHED_TOKENS: '/watched-tokens/active/all',
+    
+    // User Preferences
+    USER_NOTIFICATION_PREFERENCES: '/user/notification-preferences',
+    USER_UNLINK_TELEGRAM: '/user/unlink-telegram',
+    USER_BIND_TELEGRAM: '/user/bind-telegram', // For Telegram Login Widget binding
+    AUTH_TELEGRAM: '/auth/telegram', // For login/register via Telegram
   },
 
   // Request timeouts (in milliseconds)

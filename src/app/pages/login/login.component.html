@@ -1,0 +1,142 @@
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="auth-header">
+      <h1 class="auth-title">Welcome Back</h1>
+      <p class="auth-subtitle">Login to your account</p>
+    </div>
+
+    <!-- Telegram Login Option -->
+    <div class="telegram-login-section">
+      <div class="telegram-login-header">
+        <span class="telegram-icon">📱</span>
+        <span>Quick Login with Telegram</span>
+      </div>
+      <div id="telegram-login-container" class="telegram-widget-container"></div>
+      <p class="telegram-hint">Instant login - no password needed</p>
+    </div>
+
+    <div class="divider">
+      <span>or continue with email</span>
+    </div>
+
+    <form class="auth-form" (ngSubmit)="login()">
+      <!-- Email Input -->
+      <div class="form-group">
+        <label for="email" class="form-label">Email Address</label>
+        <input
+          id="email"
+          type="email"
+          class="form-input"
+          placeholder="you@example.com"
+          [value]="email()"
+          (input)="email.set($any($event.target).value)"
+          required
+        />
+      </div>
+
+      <!-- Password or Passwordless Toggle -->
+      <div class="login-method-toggle">
+        <button
+          type="button"
+          class="toggle-btn"
+          (click)="toggleLoginMethod()"
+        >
+          {{ usePasswordless() ? 'Use password instead' : 'Use verification code instead' }}
+        </button>
+      </div>
+
+      <!-- Password Input -->
+      @if (!usePasswordless()) {
+        <div class="form-group">
+          <label for="password" class="form-label">Password</label>
+          <input
+            id="password"
+            type="password"
+            class="form-input"
+            placeholder="Enter your password"
+            [value]="password()"
+            (input)="password.set($any($event.target).value)"
+            required
+          />
+        </div>
+      }
+
+      <!-- Passwordless Login -->
+      @if (usePasswordless()) {
+        <div class="passwordless-section">
+          @if (!codeSent()) {
+            <button
+              type="button"
+              class="btn btn-secondary btn-full"
+              (click)="sendCode()"
+              [disabled]="isLoading()"
+            >
+              {{ isLoading() ? 'Sending...' : 'Send Verification Code' }}
+            </button>
+          } @else {
+            <div class="form-group">
+              <label for="code" class="form-label">Verification Code</label>
+              <input
+                id="code"
+                type="text"
+                class="form-input"
+                placeholder="Enter 6-digit code"
+                maxlength="6"
+                [value]="verificationCode()"
+                (input)="verificationCode.set($any($event.target).value)"
+                required
+              />
+              <div class="code-hint">
+                @if (countdown() > 0) {
+                  <span class="countdown">Resend in {{ countdown() }}s</span>
+                } @else {
+                  <button
+                    type="button"
+                    class="resend-btn"
+                    (click)="sendCode()"
+                  >
+                    Resend Code
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Error Message -->
+      @if (error()) {
+        <div class="alert alert-error">
+          {{ error() }}
+        </div>
+      }
+
+      <!-- Success Message -->
+      @if (successMessage()) {
+        <div class="alert alert-success">
+          {{ successMessage() }}
+        </div>
+      }
+
+      <!-- Login Button -->
+      @if (!usePasswordless() || codeSent()) {
+        <button
+          type="submit"
+          class="btn btn-primary btn-full"
+          [disabled]="isLoading()"
+        >
+          {{ isLoading() ? 'Logging in...' : 'Login' }}
+        </button>
+      }
+    </form>
+
+    <!-- Register Link -->
+    <div class="auth-footer">
+      <p class="auth-link-text">
+        Don't have an account?
+        <a routerLink="/register" class="auth-link">Register</a>
+      </p>
+    </div>
+  </div>
+</div>
+

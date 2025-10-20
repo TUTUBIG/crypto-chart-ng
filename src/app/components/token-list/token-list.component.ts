@@ -1,8 +1,9 @@
-import { Component, Input, Output, EventEmitter, OnInit, ChangeDetectorRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { Token, TokenFilterOptions } from '../../../types/token';
-import { TokenApiService } from '../../../services/token-api.service';
+import {ChangeDetectorRef, Component, computed, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {CommonModule} from '@angular/common';
+import {FormsModule} from '@angular/forms';
+import {Token, TokenFilterOptions} from '../../../types/token';
+import {TokenService} from '../../../services/token.service';
+import {WatchlistService} from '../../../services/watchlist.service';
 
 @Component({
   selector: 'app-token-list',
@@ -12,7 +13,7 @@ import { TokenApiService } from '../../../services/token-api.service';
   styleUrls: ['./token-list.component.scss']
 })
 export class TokenListComponent implements OnInit {
-  @Input() selectedTokenId?: string;
+  @Input() selectedTokenId?: number;
   @Input() className: string = '';
   @Output() onTokenSelect = new EventEmitter<Token>();
 
@@ -27,12 +28,16 @@ export class TokenListComponent implements OnInit {
     sortOrder: 'asc',
     limit: 20
   };
-  
+
+  // Watchlist count for display
+  watchlistCount = computed(() => this.watchlistService.watchlistCount());
+
   private searchTimeout: any;
 
   constructor(
-    private tokenApiService: TokenApiService,
-    private cdr: ChangeDetectorRef
+    private tokenApiService: TokenService,
+    private cdr: ChangeDetectorRef,
+    public watchlistService: WatchlistService
   ) {}
 
   ngOnInit(): void {
@@ -43,9 +48,8 @@ export class TokenListComponent implements OnInit {
     try {
       this.loading = true;
       this.error = null;
-      
-      const tokens = await this.tokenApiService.fetchTokens(this.filterOptions);
-      this.tokens = tokens;
+
+      this.tokens = await this.tokenApiService.fetchTokens(this.filterOptions);
     } catch (err) {
       this.error = err instanceof Error ? err.message : 'Failed to fetch tokens';
     } finally {
@@ -56,14 +60,13 @@ export class TokenListComponent implements OnInit {
 
   async searchTokens(query: string): Promise<void> {
     if (query.length < 2) {
-      this.fetchTokens();
+      await this.fetchTokens();
       return;
     }
 
     try {
       this.loading = true;
-      const searchResults = await this.tokenApiService.searchTokens(query, 20);
-      this.tokens = searchResults;
+      this.tokens = await this.tokenApiService.searchTokens(query, 20);
     } catch (err) {
       this.error = err instanceof Error ? err.message : 'Search failed';
     } finally {
@@ -74,12 +77,12 @@ export class TokenListComponent implements OnInit {
 
   handleSearchChange(query: string): void {
     this.searchQuery = query;
-    
+
     // Clear previous timeout
     if (this.searchTimeout) {
       clearTimeout(this.searchTimeout);
     }
-    
+
     // Debounce search
     this.searchTimeout = setTimeout(() => {
       if (query) {
@@ -120,6 +123,28 @@ export class TokenListComponent implements OnInit {
       return `$${(volume / 1000).toFixed(1)}K`;
     }
     return `$${volume.toFixed(0)}`;
+  }
+
+  isInWatchlist(token: Token): boolean {
+    // Use numeric token.id for internal tracking
+    return this.watchlistService.isInWatchlist(token.id);
+  }
+
+  async toggleWatchlist(event: Event, token: Token): Promise<void> {
+    event.stopPropagation(); // Prevent card click
+
+    // Use numeric token.id for internal tracking
+    if (this.watchlistService.isInWatchlist(token.id)) {
+      await this.watchlistService.removeWatchToken(token.id);
+    } else {
+      const added = await this.watchlistService.addToken(token);
+      if (added) {
+        // Optional: Show success feedback
+        console.log(`Added ${token.token_symbol || token.symbol} to watchlist`);
+      }
+    }
+
+    this.cdr.detectChanges();
   }
 }
 

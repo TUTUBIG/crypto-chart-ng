@@ -1,0 +1,376 @@
+<div class="watch-page">
+  <!-- Popular Tokens Carousel Banner -->
+  <section class="popular-carousel-section">
+    <div class="container">
+      <div class="carousel-header">
+        <h2>🔥 Trending Tokens</h2>
+        <div class="carousel-controls">
+          <button class="carousel-btn" (click)="prevSlide()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M15 18l-6-6 6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <button class="carousel-btn" (click)="nextSlide()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M9 18l6-6-6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="carousel-track-container">
+        <div class="carousel-track" [style.transform]="'translateX(-' + (currentSlide() * 100) + '%)'">
+          @for (token of popularTokens(); track token.id; let i = $index) {
+            <div class="carousel-slide">
+              <div class="popular-token-card">
+                <div class="token-info">
+                  <div class="token-header">
+                    <span class="token-symbol">{{ token.symbol }}</span>
+                    <span class="trending-badge">{{ token.trending }}</span>
+                  </div>
+                  <div class="token-name">{{ token.name }}</div>
+                  <div class="token-price">\${{ token.price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 6}) }}</div>
+                  <div class="token-change" [class.positive]="token.change24h > 0" [class.negative]="token.change24h < 0">
+                    {{ token.change24h > 0 ? '▲' : '▼' }} {{ Math.abs(token.change24h).toFixed(2) }}%
+                  </div>
+                  <div class="token-volume">Vol: \${{ (token.volume24h / 1e6).toFixed(2) }}M</div>
+                </div>
+                <button class="add-to-watch-btn" (click)="addToWatchlist(token)">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M12 5v14M5 12h14" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                  Add to Watch
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="carousel-indicators">
+        @for (slide of [0, 1]; track slide; let i = $index) {
+          <button
+            class="indicator"
+            [class.active]="currentSlide() === i"
+            (click)="currentSlide.set(i)">
+          </button>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- Watchlist Section -->
+  <section class="watchlist-section">
+    <div class="container">
+      <div class="section-header">
+        <h1>👁️ My Watchlist</h1>
+        <p>Real-time monitoring with custom price alerts</p>
+      </div>
+
+      @if (watchlist().length === 0) {
+        <div class="empty-state">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <h3>No tokens in watchlist</h3>
+          <p>Add tokens from trending section above to start monitoring</p>
+        </div>
+      } @else {
+        <div class="watchlist-grid">
+          @for (token of watchlist(); track token.id) {
+            <div class="watchlist-card" [class.alert-active]="token.alertEnabled">
+              <div class="card-header">
+                <div class="token-identity">
+                  <h3>{{ token.symbol }}</h3>
+                  <span class="token-name">{{ token.name }}</span>
+                </div>
+                <button
+                  class="alert-toggle-btn"
+                  [class.active]="token.alertEnabled"
+                  (click)="toggleAlert(token)"
+                  [title]="token.alertEnabled ? 'Disable alerts' : 'Enable alerts'">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+              </div>
+
+              <div class="price-section">
+                <div class="current-price">\${{ token.price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 6}) }}</div>
+                <div class="price-change" [class.positive]="token.change24h > 0" [class.negative]="token.change24h < 0">
+                  {{ token.change24h > 0 ? '▲' : '▼' }} {{ Math.abs(token.change24h).toFixed(2) }}% (24h)
+                </div>
+              </div>
+
+              <div class="interval-changes">
+                @if (token.change1m !== undefined) {
+                  <div class="interval-chip" [class.positive]="token.change1m > 0" [class.negative]="token.change1m < 0">
+                    <span class="interval-label">1m</span>
+                    <span class="interval-value">{{ token.change1m > 0 ? '+' : '' }}{{ token.change1m.toFixed(2) }}%</span>
+                  </div>
+                }
+                @if (token.change5m !== undefined) {
+                  <div class="interval-chip" [class.positive]="token.change5m > 0" [class.negative]="token.change5m < 0">
+                    <span class="interval-label">5m</span>
+                    <span class="interval-value">{{ token.change5m > 0 ? '+' : '' }}{{ token.change5m.toFixed(2) }}%</span>
+                  </div>
+                }
+                @if (token.change1h !== undefined) {
+                  <div class="interval-chip" [class.positive]="token.change1h > 0" [class.negative]="token.change1h < 0">
+                    <span class="interval-label">1h</span>
+                    <span class="interval-value">{{ token.change1h > 0 ? '+' : '' }}{{ token.change1h.toFixed(2) }}%</span>
+                  </div>
+                }
+              </div>
+
+              @if (token.alertSettings && (token.alertSettings.interval_1m || token.alertSettings.interval_5m || token.alertSettings.interval_15m || token.alertSettings.interval_1h)) {
+                <div class="alert-settings-preview">
+                  @if (token.alertSettings.interval_1m) {
+                    <div class="alert-rule">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                      1m: {{ token.alertSettings.interval_1m > 0 ? '+' : '' }}{{ token.alertSettings.interval_1m }}%
+                    </div>
+                  }
+                  @if (token.alertSettings.interval_5m) {
+                    <div class="alert-rule">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                      5m: {{ token.alertSettings.interval_5m > 0 ? '+' : '' }}{{ token.alertSettings.interval_5m }}%
+                    </div>
+                  }
+                  @if (token.alertSettings.interval_15m) {
+                    <div class="alert-rule">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                      15m: {{ token.alertSettings.interval_15m > 0 ? '+' : '' }}{{ token.alertSettings.interval_15m }}%
+                    </div>
+                  }
+                  @if (token.alertSettings.interval_1h) {
+                    <div class="alert-rule">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                      1h: {{ token.alertSettings.interval_1h > 0 ? '+' : '' }}{{ token.alertSettings.interval_1h }}%
+                    </div>
+                  }
+                </div>
+              }
+
+              <div class="card-actions">
+                <button class="action-btn primary" (click)="openChart(token)">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke-width="2"/>
+                    <circle cx="12" cy="12" r="3" stroke-width="2"/>
+                  </svg>
+                  View Chart
+                </button>
+                <button class="action-btn secondary" (click)="openSettings(token)">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <circle cx="12" cy="12" r="3" stroke-width="2"/>
+                    <path d="M12 1v6m0 6v6M1 12h6m6 0h6" stroke-width="2" stroke-linecap="round"/>
+                  </svg>
+                  Settings
+                </button>
+                <button class="action-btn danger" (click)="removeToken(token.id)">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  </section>
+
+  <!-- Alert Settings Dialog -->
+  @if (showSettingsDialog() && selectedToken()) {
+    <div class="dialog-overlay" (click)="closeSettings()">
+      <div class="dialog-container" (click)="$event.stopPropagation()">
+        <div class="dialog-header">
+          <h2>⚙️ Alert Settings</h2>
+          <h3>{{ selectedToken()?.symbol }} / {{ selectedToken()?.name }}</h3>
+          <button class="close-btn" (click)="closeSettings()">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M18 6L6 18M6 6l12 12" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="dialog-content">
+          <!-- Change Rate Alerts -->
+          <div class="settings-section">
+            <h4>📊 Price Change Alerts</h4>
+            <p class="section-description">Set alert thresholds for different time intervals. Use positive values (+) for increases, negative values (-) for decreases.</p>
+
+            <div class="input-group">
+              <label>1 Minute Interval</label>
+              <div class="input-with-suffix">
+                <input
+                  type="number"
+                  [(ngModel)]="alertForm.interval_1m"
+                  placeholder="e.g., 3 or -3"
+                  step="0.1">
+                <span class="suffix">%</span>
+              </div>
+              <small class="help-text">Alert when price changes by this % in 1 minute</small>
+            </div>
+
+            <div class="input-group">
+              <label>5 Minute Interval</label>
+              <div class="input-with-suffix">
+                <input
+                  type="number"
+                  [(ngModel)]="alertForm.interval_5m"
+                  placeholder="e.g., 5 or -5"
+                  step="0.1">
+                <span class="suffix">%</span>
+              </div>
+              <small class="help-text">Alert when price changes by this % in 5 minutes</small>
+            </div>
+
+            <div class="input-group">
+              <label>15 Minute Interval</label>
+              <div class="input-with-suffix">
+                <input
+                  type="number"
+                  [(ngModel)]="alertForm.interval_15m"
+                  placeholder="e.g., 8 or -8"
+                  step="0.1">
+                <span class="suffix">%</span>
+              </div>
+              <small class="help-text">Alert when price changes by this % in 15 minutes</small>
+            </div>
+
+            <div class="input-group">
+              <label>1 Hour Interval</label>
+              <div class="input-with-suffix">
+                <input
+                  type="number"
+                  [(ngModel)]="alertForm.interval_1h"
+                  placeholder="e.g., 10 or -10"
+                  step="0.1">
+                <span class="suffix">%</span>
+              </div>
+              <small class="help-text">Alert when price changes by this % in 1 hour</small>
+            </div>
+          </div>
+
+          <!-- Notes -->
+          <div class="settings-section">
+            <h4>📝 Notes</h4>
+            <div class="input-group">
+              <textarea
+                [(ngModel)]="alertForm.notes"
+                placeholder="Add personal notes about this token..."
+                rows="3"
+                class="notes-textarea"></textarea>
+            </div>
+          </div>
+
+          <div class="alert-preview">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <circle cx="12" cy="12" r="10" stroke-width="2"/>
+              <path d="M12 16v-4M12 8h.01" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            <div>
+              <strong>How alerts work:</strong> Positive values (+5%) alert on increases, negative values (-5%) alert on decreases.
+              Longer intervals must have equal or greater absolute values than shorter ones.
+            </div>
+          </div>
+        </div>
+
+        <div class="dialog-actions">
+          <button class="btn-secondary" (click)="closeSettings()">Cancel</button>
+          <button class="btn-primary" (click)="saveSettings()">Save & Enable Alerts</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Floating Chart Modal -->
+  @if (showChartModal() && chartToken()) {
+    <div class="chart-modal-overlay" (click)="closeChart()">
+      <div class="chart-modal-container" (click)="$event.stopPropagation()">
+        <div class="chart-modal-header">
+          <div class="chart-token-info">
+            <h2>{{ chartToken()!.symbol }}</h2>
+            <span class="chart-token-name">{{ chartToken()!.name }}</span>
+            <div class="chart-token-price">
+              \${{ chartToken()!.price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 6}) }}
+              <span class="price-change" [class.positive]="chartToken()!.change24h > 0" [class.negative]="chartToken()!.change24h < 0">
+                {{ chartToken()!.change24h > 0 ? '▲' : '▼' }} {{ Math.abs(chartToken()!.change24h).toFixed(2) }}%
+              </span>
+            </div>
+          </div>
+          <button class="chart-close-btn" (click)="closeChart()" title="Close (ESC)">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M18 6L6 18M6 6l12 12" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+
+        <div class="chart-modal-content">
+          @if (isChartLoading()) {
+            <!-- Skeleton Loader -->
+            <div class="chart-skeleton">
+              <div class="skeleton-header">
+                <div class="skeleton-line skeleton-title"></div>
+                <div class="skeleton-line skeleton-subtitle"></div>
+              </div>
+              <div class="skeleton-chart-area">
+                <div class="skeleton-y-axis">
+                  @for (item of [1,2,3,4,5,6,7,8]; track item) {
+                    <div class="skeleton-label"></div>
+                  }
+                </div>
+                <div class="skeleton-chart-main">
+                  <div class="skeleton-candles">
+                    @for (item of [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]; track item) {
+                      <div class="skeleton-candle" [style.height.%]="50 + (item * 2.5) % 50"></div>
+                    }
+                  </div>
+                  <div class="skeleton-x-axis">
+                    @for (item of [1,2,3,4,5,6,7]; track item) {
+                      <div class="skeleton-label"></div>
+                    }
+                  </div>
+                </div>
+              </div>
+              <div class="skeleton-footer">
+                <div class="skeleton-line skeleton-info"></div>
+                <div class="skeleton-line skeleton-info"></div>
+                <div class="skeleton-line skeleton-info"></div>
+              </div>
+            </div>
+          } @else {
+            <app-crypto-chart
+              [tokenId]="getApiTokenId(chartToken()!)"
+              [symbol]="chartToken()!.symbol">
+            </app-crypto-chart>
+          }
+        </div>
+
+        <div class="chart-modal-footer">
+          <button class="chart-action-btn secondary-btn" (click)="closeChart()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M19 12H5M12 19l-7-7 7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Close
+          </button>
+          <button class="chart-action-btn primary-btn" [routerLink]="['/market']" [queryParams]="{token: chartToken()?.id}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Open in Market Page
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

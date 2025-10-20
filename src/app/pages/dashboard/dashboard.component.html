@@ -1,0 +1,77 @@
+<div class="dashboard-page">
+  <div class="page-header">
+    <div class="container">
+      <h1 class="page-title">📊 Dashboard</h1>
+      <p class="page-description">
+        Manage your API keys and monitor usage
+      </p>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="dashboard-content">
+      
+      <!-- Stats -->
+      <section class="section">
+        <div class="stats-grid">
+          @for (stat of stats; track stat.label) {
+            <div class="stat-card">
+              <div class="stat-icon">{{ stat.icon }}</div>
+              <div class="stat-details">
+                <div class="stat-label">{{ stat.label }}</div>
+                <div class="stat-value">{{ stat.value }}</div>
+                <div class="stat-change" [class.positive]="stat.change.startsWith('+')" [class.negative]="stat.change.startsWith('-')">
+                  {{ stat.change }}
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+
+      <!-- API Keys -->
+      <section class="section">
+        <div class="section-header">
+          <h2 class="section-title">🔑 API Keys</h2>
+          <button class="btn btn-primary">+ Create New Key</button>
+        </div>
+        
+        <div class="api-keys-list">
+          @for (key of apiKeys(); track key.id) {
+            <div class="api-key-card">
+              <div class="key-info">
+                <h3 class="key-name">{{ key.name }}</h3>
+                <div class="key-value">
+                  <code>{{ key.key }}</code>
+                  <button class="btn-icon" title="Copy">📋</button>
+                </div>
+                <div class="key-meta">
+                  <span>Created: {{ key.created | date:'short' }}</span>
+                  <span>•</span>
+                  <span>Last used: {{ key.lastUsed ? (key.lastUsed | date:'short') : 'Never' }}</span>
+                  <span>•</span>
+                  <span>{{ key.requestsToday }} requests today</span>
+                </div>
+              </div>
+              <div class="key-actions">
+                <button class="btn btn-secondary">View Stats</button>
+                <button class="btn btn-danger">Delete</button>
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+
+      <!-- Usage Chart Placeholder -->
+      <section class="section">
+        <h2 class="section-title">📈 API Usage (Last 7 Days)</h2>
+        <div class="chart-placeholder">
+          <div class="placeholder-icon">📊</div>
+          <p>Usage chart coming soon</p>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+

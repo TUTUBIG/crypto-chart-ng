@@ -1,0 +1,94 @@
+<div class="developer-page">
+  <div class="page-header">
+    <div class="container">
+      <h1 class="page-title">💻 Developer Hub</h1>
+      <p class="page-description">
+        Build powerful crypto applications with our SDK and API
+      </p>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="developer-content">
+      
+      <!-- Quick Start -->
+      <section class="section">
+        <h2 class="section-title">🚀 Quick Start</h2>
+        <div class="code-block">
+          <pre><code>{{ apiExample }}</code></pre>
+        </div>
+      </section>
+
+      <!-- Features -->
+      <section class="section">
+        <h2 class="section-title">✨ Features</h2>
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-icon">📡</div>
+            <h3>RESTful API</h3>
+            <p>Get historical candle data, token info, and market statistics</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🔌</div>
+            <h3>WebSocket Streaming</h3>
+            <p>Real-time trade updates with sub-100ms latency</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">📦</div>
+            <h3>TypeScript SDK</h3>
+            <p>Fully typed SDK for JavaScript and TypeScript</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🎨</div>
+            <h3>Chart Widgets</h3>
+            <p>Drop-in components for React, Angular, Vue</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Widget Integration -->
+      <section class="section">
+        <h2 class="section-title">🎨 Widget Integration</h2>
+        <div class="code-block">
+          <pre><code>{{ widgetExample }}</code></pre>
+        </div>
+      </section>
+
+      <!-- Endpoints -->
+      <section class="section">
+        <h2 class="section-title">📍 API Endpoints</h2>
+        <div class="endpoint-list">
+          <div class="endpoint-item">
+            <div class="endpoint-method get">GET</div>
+            <div class="endpoint-path">/api/candles/:tokenId</div>
+            <div class="endpoint-description">Get historical candle data</div>
+          </div>
+          <div class="endpoint-item">
+            <div class="endpoint-method get">GET</div>
+            <div class="endpoint-path">/api/candle/:tokenId</div>
+            <div class="endpoint-description">Get latest candle</div>
+          </div>
+          <div class="endpoint-item">
+            <div class="endpoint-method get">GET</div>
+            <div class="endpoint-path">/api/tokens</div>
+            <div class="endpoint-description">List all available tokens</div>
+          </div>
+          <div class="endpoint-item">
+            <div class="endpoint-method ws">WS</div>
+            <div class="endpoint-path">wss://api.fipulse.com/ws</div>
+            <div class="endpoint-description">WebSocket connection for real-time data</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CTA -->
+      <section class="section cta-section">
+        <h2>Ready to build?</h2>
+        <p>Get your API key and start building in minutes</p>
+        <a routerLink="/dashboard" class="btn btn-primary btn-large">Get API Key</a>
+      </section>
+
+    </div>
+  </div>
+</div>
+

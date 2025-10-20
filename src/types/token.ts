@@ -1,6 +1,8 @@
 // Token data structure - matches API response
 export interface Token {
+  // Primary identifier - use this for internal state management, lookups, and storage
   id: number;
+  // Core token properties from API
   chain_id: string;
   token_address: string;
   token_symbol: string;
@@ -11,9 +13,8 @@ export interface Token {
   volume_updated_at: string | null;
   created_at: string;
   updated_at: string;
-  
+
   // Additional fields for UI/display purposes
-  tokenId?: string; // Computed from id for compatibility
   symbol?: string; // Alias for token_symbol
   name?: string; // Alias for token_name
   price?: number; // Not in API, computed or fetched separately

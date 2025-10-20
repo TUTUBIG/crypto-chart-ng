@@ -34,7 +34,7 @@ crypto-chart-ng/
 │   │   ├── crypto-chart-sdk.ts       # Main SDK class
 │   │   └── index.ts                  # SDK exports
 │   ├── services/
-│   │   └── token-api.service.ts      # Token API service
+│   │   └── token.service.ts      # Token API service
 │   ├── types/
 │   │   └── token.ts                  # Token interfaces
 │   ├── config/

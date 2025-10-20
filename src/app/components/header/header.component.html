@@ -1,0 +1,113 @@
+<header class="header">
+  <div class="header-container">
+    <!-- Logo -->
+    <div class="logo">
+      <a routerLink="/" class="logo-link">
+        <span class="logo-icon">⚡</span>
+        <span class="logo-text">FiPulse</span>
+      </a>
+    </div>
+
+    <!-- Desktop Navigation -->
+    <nav class="nav-desktop">
+      <a routerLink="/market" routerLinkActive="active" class="nav-link">
+        <span class="nav-icon">📈</span>
+        Market
+      </a>
+      <a routerLink="/watch" routerLinkActive="active" class="nav-link">
+        <span class="nav-icon">👁️</span>
+        Watch
+      </a>
+      <a routerLink="/developer" routerLinkActive="active" class="nav-link">
+        <span class="nav-icon">💻</span>
+        Developer
+      </a>
+      @if (isLoggedIn()) {
+        <a routerLink="/dashboard" routerLinkActive="active" class="nav-link">
+          <span class="nav-icon">📊</span>
+          Dashboard
+        </a>
+        <a routerLink="/me" routerLinkActive="active" class="nav-link">
+          <span class="nav-icon">👤</span>
+          Me
+        </a>
+      }
+    </nav>
+
+    <!-- Auth Buttons -->
+    <div class="auth-section">
+      @if (isLoggedIn()) {
+        <div class="user-info">
+          <span class="user-email">{{ currentUser()?.email }}</span>
+        </div>
+        <button class="btn btn-secondary" (click)="logout()">
+          Logout
+        </button>
+      } @else {
+        <button class="btn btn-outline" (click)="navigateToLogin()">
+          Login
+        </button>
+        <button class="btn btn-primary" (click)="navigateToRegister()">
+          Register
+        </button>
+      }
+    </div>
+
+    <!-- Mobile Menu Toggle -->
+    <button class="mobile-menu-btn" (click)="toggleMobileMenu()">
+      @if (isMobileMenuOpen()) {
+        <span class="icon">✕</span>
+      } @else {
+        <span class="icon">☰</span>
+      }
+    </button>
+  </div>
+
+  <!-- Mobile Navigation -->
+  @if (isMobileMenuOpen()) {
+    <nav class="nav-mobile">
+      <a routerLink="/market" routerLinkActive="active" class="nav-link-mobile" (click)="toggleMobileMenu()">
+        <span class="nav-icon">📈</span>
+        Market
+      </a>
+      <a routerLink="/watch" routerLinkActive="active" class="nav-link-mobile" (click)="toggleMobileMenu()">
+        <span class="nav-icon">👁️</span>
+        Watch
+      </a>
+      <a routerLink="/developer" routerLinkActive="active" class="nav-link-mobile" (click)="toggleMobileMenu()">
+        <span class="nav-icon">💻</span>
+        Developer
+      </a>
+      @if (isLoggedIn()) {
+        <a routerLink="/dashboard" routerLinkActive="active" class="nav-link-mobile" (click)="toggleMobileMenu()">
+          <span class="nav-icon">📊</span>
+          Dashboard
+        </a>
+        <a routerLink="/me" routerLinkActive="active" class="nav-link-mobile" (click)="toggleMobileMenu()">
+          <span class="nav-icon">👤</span>
+          Me
+        </a>
+      }
+
+      <!-- Mobile Auth Buttons -->
+      <div class="mobile-auth-section">
+        @if (isLoggedIn()) {
+          <div class="mobile-user-info">
+            <span class="mobile-user-email">{{ currentUser()?.email }}</span>
+          </div>
+          <button class="mobile-auth-btn btn-secondary-mobile" (click)="logout()">
+            Logout
+          </button>
+        } @else {
+          <button class="mobile-auth-btn btn-outline-mobile" (click)="navigateToLogin()">
+            Login
+          </button>
+          <button class="mobile-auth-btn btn-primary-mobile" (click)="navigateToRegister()">
+            Register
+          </button>
+        }
+      </div>
+    </nav>
+  }
+</header>
+

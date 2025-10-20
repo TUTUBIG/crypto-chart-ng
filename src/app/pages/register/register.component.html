@@ -1,0 +1,132 @@
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="auth-header">
+      <h1 class="auth-title">Create Account</h1>
+      <p class="auth-subtitle">Register to get started</p>
+    </div>
+
+    <form class="auth-form" (ngSubmit)="register()">
+      <!-- Email Input -->
+      <div class="form-group">
+        <label for="email" class="form-label">Email Address</label>
+        <input
+          id="email"
+          type="email"
+          class="form-input"
+          placeholder="you@example.com"
+          [value]="email()"
+          (input)="email.set($any($event.target).value)"
+          [disabled]="codeSent()"
+          required
+        />
+      </div>
+
+      <!-- Password Input -->
+      <div class="form-group">
+        <label for="password" class="form-label">Password</label>
+        <input
+          id="password"
+          type="password"
+          class="form-input"
+          placeholder="At least 8 characters"
+          [value]="password()"
+          (input)="password.set($any($event.target).value)"
+          [disabled]="codeSent()"
+          required
+        />
+        <small class="form-hint">Must be at least 8 characters long</small>
+      </div>
+
+      <!-- Confirm Password Input -->
+      <div class="form-group">
+        <label for="confirmPassword" class="form-label">Confirm Password</label>
+        <input
+          id="confirmPassword"
+          type="password"
+          class="form-input"
+          placeholder="Re-enter your password"
+          [value]="confirmPassword()"
+          (input)="confirmPassword.set($any($event.target).value)"
+          [disabled]="codeSent()"
+          required
+        />
+      </div>
+
+      <!-- Send Code Button -->
+      @if (!codeSent()) {
+        <button
+          type="button"
+          class="btn btn-secondary btn-full"
+          (click)="sendCode()"
+          [disabled]="isLoading()"
+        >
+          {{ isLoading() ? 'Sending...' : 'Send Verification Code' }}
+        </button>
+      }
+
+      <!-- Verification Code Input -->
+      @if (codeSent()) {
+        <div class="form-group">
+          <label for="code" class="form-label">Verification Code</label>
+          <input
+            id="code"
+            type="text"
+            class="form-input"
+            placeholder="Enter 6-digit code"
+            maxlength="6"
+            [value]="verificationCode()"
+            (input)="verificationCode.set($any($event.target).value)"
+            required
+          />
+          <div class="code-hint">
+            @if (countdown() > 0) {
+              <span class="countdown">Resend in {{ countdown() }}s</span>
+            } @else {
+              <button
+                type="button"
+                class="resend-btn"
+                (click)="sendCode()"
+              >
+                Resend Code
+              </button>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Error Message -->
+      @if (error()) {
+        <div class="alert alert-error">
+          {{ error() }}
+        </div>
+      }
+
+      <!-- Success Message -->
+      @if (successMessage()) {
+        <div class="alert alert-success">
+          {{ successMessage() }}
+        </div>
+      }
+
+      <!-- Register Button -->
+      @if (codeSent()) {
+        <button
+          type="submit"
+          class="btn btn-primary btn-full"
+          [disabled]="isLoading()"
+        >
+          {{ isLoading() ? 'Registering...' : 'Register' }}
+        </button>
+      }
+    </form>
+
+    <!-- Login Link -->
+    <div class="auth-footer">
+      <p class="auth-link-text">
+        Already have an account?
+        <a routerLink="/login" class="auth-link">Login</a>
+      </p>
+    </div>
+  </div>
+</div>
+

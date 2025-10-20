@@ -1,9 +1,9 @@
-import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
-import { Token, TokenFilterOptions, TokenCreateData, TokenUpdateData } from '../types/token';
-import { API_CONFIG } from '../config/api.config';
-import { normalizeTokens, normalizeToken, constructTokenId } from '../utils/token-utils';
+import {Injectable} from '@angular/core';
+import {HttpClient, HttpParams} from '@angular/common/http';
+import {firstValueFrom} from 'rxjs';
+import {Token, TokenFilterOptions} from '../types/token';
+import {API_CONFIG} from '../config/api.config';
+import {constructApiTokenId, normalizeToken, normalizeTokens} from '../utils/token-utils';
 
 /**
  * Token API Service - Handles token-related API calls
@@ -11,7 +11,7 @@ import { normalizeTokens, normalizeToken, constructTokenId } from '../utils/toke
 @Injectable({
   providedIn: 'root'
 })
-export class TokenApiService {
+export class TokenService {
   constructor(private http: HttpClient) {}
 
   /**
@@ -22,7 +22,6 @@ export class TokenApiService {
       let params = new HttpParams();
       if (filterOptions.search) params = params.set('search', filterOptions.search);
       if (filterOptions.category) params = params.set('category', filterOptions.category);
-      if (filterOptions.isActive !== undefined) params = params.set('isActive', filterOptions.isActive.toString());
       if (filterOptions.page) params = params.set('page', filterOptions.page.toString());
       if (filterOptions.limit) params = params.set('limit', filterOptions.limit.toString());
       if (filterOptions.sortBy) params = params.set('sortBy', filterOptions.sortBy);
@@ -45,18 +44,18 @@ export class TokenApiService {
   }
 
   /**
-   * Fetch a single token by ID
+   * Fetch a single token by ID (numeric database ID)
    */
-  async fetchTokenById(tokenId: string): Promise<Token | null> {
+  async fetchTokenById(id: number): Promise<Token | null> {
     try {
       const response = await firstValueFrom(
-        this.http.get<Token>(`${API_CONFIG.BASE_URL}/tokens/${tokenId}`)
+        this.http.get<Token>(`${API_CONFIG.BASE_URL}/tokens/${id}`)
       );
       return response ? normalizeToken(response) : null;
     } catch (error) {
       console.error('Error fetching token:', error);
       // Return mock data for development
-      return this.getMockTokenById(tokenId);
+      return this.getMockTokenById(id);
     }
   }
 
@@ -80,51 +79,6 @@ export class TokenApiService {
       console.error('Error searching tokens:', error);
       // Return mock search results for development
       return this.getMockSearchResults(query, limit);
-    }
-  }
-
-  /**
-   * Create a new token
-   */
-  async createToken(tokenData: TokenCreateData): Promise<Token> {
-    try {
-      const response = await firstValueFrom(
-        this.http.post<Token>(`${API_CONFIG.BASE_URL}/tokens`, tokenData)
-      );
-      return response;
-    } catch (error) {
-      console.error('Error creating token:', error);
-      throw new Error('Failed to create token');
-    }
-  }
-
-  /**
-   * Update an existing token
-   */
-  async updateToken(tokenId: string, tokenData: TokenUpdateData): Promise<Token> {
-    try {
-      const response = await firstValueFrom(
-        this.http.put<Token>(`${API_CONFIG.BASE_URL}/tokens/${tokenId}`, tokenData)
-      );
-      return response;
-    } catch (error) {
-      console.error('Error updating token:', error);
-      throw new Error('Failed to update token');
-    }
-  }
-
-  /**
-   * Delete a token
-   */
-  async deleteToken(tokenId: string): Promise<boolean> {
-    try {
-      await firstValueFrom(
-        this.http.delete(`${API_CONFIG.BASE_URL}/tokens/${tokenId}`)
-      );
-      return true;
-    } catch (error) {
-      console.error('Error deleting token:', error);
-      throw new Error('Failed to delete token');
     }
   }
 
@@ -152,8 +106,6 @@ export class TokenApiService {
       volume_updated_at: '2024-01-15T10:30:00Z',
       created_at: '2023-01-01T00:00:00Z',
       updated_at: '2024-01-15T10:30:00Z',
-      // Computed fields for UI - using utility function
-      tokenId: constructTokenId(chain_id, token_address),
       symbol: token_symbol,
       name: token_name,
       price,
@@ -164,7 +116,8 @@ export class TokenApiService {
       category: 'cryptocurrency'
     });
 
-    const mockTokens: Token[] = [
+    // Apply filters
+    let filteredTokens = [
       createMockToken(1, '1', '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599', 'BTC', 'Bitcoin', 28500000000, 43250.50, 2.45),
       createMockToken(2, '1', '0x2Ebd53d035150f328bd754D6DC66B99B0eDB89aa', 'MET', 'MET', 9413.151128, 0.85, 3.21),
       createMockToken(3, '1', '0xA0b86a33E6441c8C06DdD4D4c4c4c4c4c4c4c4c4c', 'ETH', 'Ethereum', 15200000000, 2650.75, -1.23),
@@ -175,12 +128,9 @@ export class TokenApiService {
       createMockToken(8, '1', '0xF0g86a33E6441c8C06DdD4D4c4c4c4c4c4c4c4c4c4c', 'AVAX', 'Avalanche', 950000000, 35.20, 1.89)
     ];
 
-    // Apply filters
-    let filteredTokens = mockTokens;
-
     if (filterOptions.search) {
       const searchLower = filterOptions.search.toLowerCase();
-      filteredTokens = filteredTokens.filter(token => 
+      filteredTokens = filteredTokens.filter(token =>
         token.token_symbol?.toLowerCase().includes(searchLower) ||
         token.token_name?.toLowerCase().includes(searchLower) ||
         token.token_address?.toLowerCase().includes(searchLower)
@@ -201,16 +151,16 @@ export class TokenApiService {
     // Apply sorting
     const sortBy = filterOptions.sortBy || 'token_symbol';
     const sortOrder = filterOptions.sortOrder || 'asc';
-    
+
     filteredTokens.sort((a, b) => {
       let aValue: any = a[sortBy];
       let bValue: any = b[sortBy];
-      
+
       if (typeof aValue === 'string') {
         aValue = aValue.toLowerCase();
         bValue = bValue.toLowerCase();
       }
-      
+
       if (sortOrder === 'asc') {
         return aValue > bValue ? 1 : -1;
       } else {
@@ -226,17 +176,17 @@ export class TokenApiService {
     return filteredTokens.slice(startIndex, endIndex);
   }
 
-  private getMockTokenById(tokenId: string): Token | null {
+  private getMockTokenById(id: number): Token | null {
     const mockTokens = this.getMockTokens({});
-    return mockTokens.find(token => token.tokenId === tokenId) || null;
+    return mockTokens.find(token => token.id === id) || null;
   }
 
   private getMockSearchResults(query: string, limit: number): Token[] {
     const mockTokens = this.getMockTokens({});
     const searchLower = query.toLowerCase();
-    
+
     return mockTokens
-      .filter(token => 
+      .filter(token =>
         token.token_symbol?.toLowerCase().includes(searchLower) ||
         token.token_name?.toLowerCase().includes(searchLower)
       )

@@ -57,7 +57,7 @@ export class CryptoChartSDK {
 
   /**
    * Initialize the SDK with a token ID
-   * @param tokenId - The token ID to initialize with
+   * @param tokenId - API token ID in format: {chain_id}-{lowercase_token_address} (e.g., "1-2260fac5e5542a773aa44fbcfedf7c193bc2c599")
    * @param connectWebSocket - Whether to connect to WebSocket immediately (default: true)
    */
   async initialize(tokenId: string, connectWebSocket: boolean = true): Promise<void> {
@@ -113,7 +113,7 @@ export class CryptoChartSDK {
 
   /**
    * Subscribe to real-time data
-   * @param tokenId - Optional token ID to subscribe to (uses currentTokenId if not provided)
+   * @param tokenId - Optional API token ID in format: {chain_id}-{lowercase_token_address} (uses currentTokenId if not provided)
    */
   subscribe(tokenId?: string): void {
     const targetTokenId = tokenId || this.currentTokenId;

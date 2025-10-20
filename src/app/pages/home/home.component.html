@@ -1,0 +1,142 @@
+<div class="home-page">
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="container">
+      <div class="hero-content">
+        <h1 class="hero-title">
+          Real-time Crypto Charts & API
+          <span class="gradient-text">for Builders</span>
+        </h1>
+        <p class="hero-description">
+          Professional-grade cryptocurrency data infrastructure. Power your apps with live price feeds,
+          historical charts, and WebSocket streaming. Built for developers, loved by traders.
+        </p>
+        <div class="hero-actions">
+          <a routerLink="/market" class="btn btn-primary btn-large">
+            <span class="btn-icon">🚀</span>
+            Try Live Demo
+          </a>
+          <a routerLink="/developer" class="btn btn-secondary btn-large">
+            <span class="btn-icon">📖</span>
+            View API Docs
+          </a>
+        </div>
+        <div class="hero-stats">
+          <div class="stat">
+            <div class="stat-value">99.9%</div>
+            <div class="stat-label">Uptime</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">&lt;100ms</div>
+            <div class="stat-label">Latency</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">10M+</div>
+            <div class="stat-label">API Calls/Day</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Live Demo Section -->
+  <section class="demo-section">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">See It In Action</h2>
+        <p class="section-description">
+          Explore real-time cryptocurrency charts and market data
+        </p>
+      </div>
+      <div class="demo-preview">
+        <div class="preview-card">
+          <div class="preview-icon">📊</div>
+          <h3>Interactive Charts</h3>
+          <p>Real-time candlestick charts with WebSocket updates</p>
+        </div>
+        <div class="preview-card">
+          <div class="preview-icon">🔍</div>
+          <h3>Token Browser</h3>
+          <p>Search and explore thousands of cryptocurrency tokens</p>
+        </div>
+        <div class="preview-card">
+          <div class="preview-icon">⚡</div>
+          <h3>Live Data</h3>
+          <p>Sub-100ms latency with automatic reconnection</p>
+        </div>
+      </div>
+      <div class="demo-cta">
+        <a routerLink="/market" class="btn btn-primary btn-large">
+          <span class="btn-icon">🚀</span>
+          Open Live Market
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features-section">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">Built for Performance</h2>
+        <p class="section-description">
+          Everything you need to build world-class crypto applications
+        </p>
+      </div>
+      <div class="features-grid">
+        @for (feature of features; track feature.title) {
+          <div class="feature-card">
+            <div class="feature-icon">{{ feature.icon }}</div>
+            <h3 class="feature-title">{{ feature.title }}</h3>
+            <p class="feature-description">{{ feature.description }}</p>
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- Use Cases Section -->
+  <section class="usecases-section">
+    <div class="container">
+      <div class="usecases-grid">
+        @for (useCase of useCases; track useCase.title) {
+          <div class="usecase-card">
+            <div class="usecase-icon">{{ useCase.icon }}</div>
+            <h3 class="usecase-title">{{ useCase.title }}</h3>
+            <p class="usecase-description">{{ useCase.description }}</p>
+            <ul class="usecase-features">
+              @for (feature of useCase.features; track feature) {
+                <li>✓ {{ feature }}</li>
+              }
+            </ul>
+            <a [routerLink]="useCase.link" class="btn btn-outline">
+              {{ useCase.cta }}
+              <span class="btn-arrow">→</span>
+            </a>
+          </div>
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta-section">
+    <div class="container">
+      <div class="cta-content">
+        <h2 class="cta-title">Ready to Get Started?</h2>
+        <p class="cta-description">
+          Join thousands of developers building the future of crypto applications
+        </p>
+        <div class="cta-actions">
+          <a routerLink="/market" class="btn btn-primary btn-large">
+            Try Demo Now
+          </a>
+          <a routerLink="/developer" class="btn btn-secondary btn-large">
+            Get API Key
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+

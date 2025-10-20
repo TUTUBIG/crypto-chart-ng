@@ -32,7 +32,7 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('chartContainer', { static: false }) chartContainer!: ElementRef<HTMLDivElement>;
 
   // Required props
-  @Input() tokenId!: string;
+  @Input() tokenId!: string; // API token ID format: {chain_id}-{lowercase_token_address}
 
   // Optional display props
   @Input() symbol?: string;

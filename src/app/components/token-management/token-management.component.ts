@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Token } from '../../../types/token';
 import { TokenListComponent } from '../token-list/token-list.component';
 import { CryptoChartComponent } from '../crypto-chart/crypto-chart.component';
-import { constructTokenId } from '../../../utils/token-utils';
+import { getApiTokenId } from '../../../utils/token-utils';
 
 @Component({
   selector: 'app-token-management',
@@ -35,11 +35,11 @@ export class TokenManagementComponent {
     this.currentToken.set(token);
     
     // Create fixed widget configuration
-    // Ensure tokenId is in the correct format: {chain_id}-{lowercase(token_address)}
-    const tokenId = token.tokenId || constructTokenId(token.chain_id, token.token_address);
+    // Use getApiTokenId to construct the API format (chain_id-address) for chart/WebSocket calls
+    const tokenId = getApiTokenId(token);
     
     const config = {
-      tokenId,
+      tokenId, // API format for candle-chart and WebSocket
       symbol: `${token.token_symbol || token.symbol}/USDT`,
       title: `${token.token_name || token.name} Chart`
     };

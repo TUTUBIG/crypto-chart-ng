@@ -24,9 +24,9 @@
           }
         </div>
       </div>
-      
+
       <app-token-list
-        [selectedTokenId]="currentToken()?.tokenId"
+        [selectedTokenId]="currentToken()?.id"
         (onTokenSelect)="handleTokenClick($event)"
         className="token-list-panel"
       />

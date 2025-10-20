@@ -25,13 +25,14 @@ export class ApiService {
 
   /**
    * Fetch historical candles from API
+   * @param tokenId - API token ID in format: {chain_id}-{lowercase_token_address} (e.g., "1-2260fac5e5542a773aa44fbcfedf7c193bc2c599")
    */
   async fetchHistoryCandles(tokenId: string): Promise<Candle[]> {
     try {
       const response = await firstValueFrom(
         this.http.get(`${this.config.baseUrl}/candle-chart`, {
           params: {
-            token_id: tokenId,
+            token_id: tokenId, // API format: chain_id-address
             time_frame: '300'
           },
           responseType: 'text',
@@ -63,13 +64,14 @@ export class ApiService {
 
   /**
    * Fetch single minute candle from API
+   * @param tokenId - API token ID in format: {chain_id}-{lowercase_token_address} (e.g., "1-2260fac5e5542a773aa44fbcfedf7c193bc2c599")
    */
   async fetchSingleCandle(tokenId: string): Promise<Candle | null> {
     try {
       const response = await firstValueFrom(
         this.http.get(`${this.config.baseUrl}/single-candle`, {
           params: {
-            token_id: tokenId,
+            token_id: tokenId, // API format: chain_id-address
             time_frame: '300'
           },
           responseType: 'text',

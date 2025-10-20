@@ -1,7 +1,15 @@
 <div class="token-list" [ngClass]="className">
   <!-- Header -->
   <div class="token-list-header">
-    <h3>Available Tokens</h3>
+    <div class="header-title-section">
+      <h3>Available Tokens</h3>
+      @if (watchlistCount() > 0) {
+        <span class="watchlist-badge">
+          <span class="watchlist-icon">👁️</span>
+          {{ watchlistCount() }} watching
+        </span>
+      }
+    </div>
     <div class="token-list-controls">
       <div class="search-container">
         <input
@@ -13,7 +21,7 @@
         />
         <span class="search-icon">🔍</span>
       </div>
-      
+
       <select
         [(ngModel)]="filterOptions.sortBy"
         (ngModelChange)="handleFilterChange({ sortBy: filterOptions.sortBy })"
@@ -23,7 +31,7 @@
         <option value="token_name">Sort by Name</option>
         <option value="daily_volume_usd">Sort by Volume</option>
       </select>
-      
+
       <select
         [(ngModel)]="filterOptions.sortOrder"
         (ngModelChange)="handleFilterChange({ sortOrder: filterOptions.sortOrder })"
@@ -66,40 +74,56 @@
           @for (token of tokens; track token.id) {
             <div
               class="token-card"
-              [class.selected]="selectedTokenId === token.tokenId"
+              [class.selected]="selectedTokenId === token.id"
+              [class.in-watchlist]="isInWatchlist(token)"
               (click)="handleTokenClick(token)"
             >
               <div class="token-header">
                 <div class="token-symbol">
                   {{ token.token_symbol || token.symbol || 'N/A' }}
                 </div>
-                <div class="token-status">
-                  @if (token.volume_updated_at) {
-                    <span class="status-active">●</span>
-                  } @else {
-                    <span class="status-inactive">●</span>
-                  }
+                <div class="token-header-actions">
+                  <button
+                    class="watchlist-btn"
+                    [class.active]="isInWatchlist(token)"
+                    (click)="toggleWatchlist($event, token)"
+                    [attr.aria-label]="isInWatchlist(token) ? 'Remove from watchlist' : 'Add to watchlist'"
+                    title="{{ isInWatchlist(token) ? 'Remove from watchlist' : 'Add to watchlist' }}"
+                  >
+                    @if (isInWatchlist(token)) {
+                      <span class="watchlist-icon">👁️</span>
+                    } @else {
+                      <span class="watchlist-icon">👁️‍🗨️</span>
+                    }
+                  </button>
+                  <div class="token-status">
+                    @if (token.volume_updated_at) {
+                      <span class="status-active">●</span>
+                    } @else {
+                      <span class="status-inactive">●</span>
+                    }
+                  </div>
                 </div>
               </div>
-              
+
               <div class="token-name">
                 {{ token.token_name || token.name || 'Unknown Token' }}
               </div>
-              
+
               <div class="token-address">
                 {{ token.token_address }}
               </div>
-              
+
               <div class="token-metrics">
                 <div class="metric">
                   <span class="metric-label">Price:</span>
                   <span class="metric-value">{{ formatPrice(token.price) }}</span>
                 </div>
-                
+
                 @if (token.change24h !== undefined) {
                   <div class="metric">
                     <span class="metric-label">24h Change:</span>
-                    <span 
+                    <span
                       class="metric-value"
                       [class.positive]="token.change24h >= 0"
                       [class.negative]="token.change24h < 0"
@@ -108,13 +132,13 @@
                     </span>
                   </div>
                 }
-                
+
                 <div class="metric">
                   <span class="metric-label">24h Volume:</span>
                   <span class="metric-value">{{ formatVolume(token.daily_volume_usd) }}</span>
                 </div>
               </div>
-              
+
               <div class="token-footer">
                 <span class="token-id">
                   ID: {{ token.id }}
