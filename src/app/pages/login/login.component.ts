@@ -75,40 +75,18 @@ export class LoginComponent implements OnInit, OnDestroy {
       
       console.log('Telegram auth data:', telegramUser);
       
-      // Send to backend for authentication/registration
-      const response = await fetch(`${API_CONFIG.BASE_URL}/auth/telegram`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          telegram_id: telegramUser.id,
-          telegram_username: telegramUser.username,
-          first_name: telegramUser.first_name,
-          last_name: telegramUser.last_name,
-          photo_url: telegramUser.photo_url,
-          auth_date: telegramUser.auth_date,
-          hash: telegramUser.hash
-        }),
-      });
+      // Use AuthService to handle Telegram login
+      const result = await this.authService.loginWithTelegram(telegramUser);
       
-      const data = await response.json();
-      
-      if (!response.ok) {
-        this.error.set(data.error || 'Telegram login failed');
-        return;
+      if (result.success) {
+        this.successMessage.set('Login successful via Telegram!');
+        
+        setTimeout(() => {
+          this.router.navigate(['/dashboard']);
+        }, 500);
+      } else {
+        this.error.set(result.error || 'Telegram login failed');
       }
-      
-      // Store auth tokens
-      localStorage.setItem('access_token', data.access_token);
-      localStorage.setItem('refresh_token', data.refresh_token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      
-      this.successMessage.set('Login successful via Telegram!');
-      
-      setTimeout(() => {
-        this.router.navigate(['/dashboard']);
-      }, 500);
       
     } catch (error) {
       console.error('Error during Telegram login:', error);

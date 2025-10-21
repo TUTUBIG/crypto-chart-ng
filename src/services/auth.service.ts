@@ -84,7 +84,7 @@ export class AuthService {
     localStorage.setItem(this.ACCESS_TOKEN_KEY, data.access_token);
     localStorage.setItem(this.REFRESH_TOKEN_KEY, data.refresh_token);
     localStorage.setItem(this.USER_KEY, JSON.stringify(data.user));
-    
+
     this.isAuthenticatedSignal.set(true);
     this.currentUserSignal.set(data.user);
   }
@@ -96,7 +96,7 @@ export class AuthService {
     localStorage.removeItem(this.ACCESS_TOKEN_KEY);
     localStorage.removeItem(this.REFRESH_TOKEN_KEY);
     localStorage.removeItem(this.USER_KEY);
-    
+
     this.isAuthenticatedSignal.set(false);
     this.currentUserSignal.set(null);
   }
@@ -281,6 +281,114 @@ export class AuthService {
       return { success: true };
     } catch (error) {
       console.error('Error fetching user profile:', error);
+      return { success: false, error: 'Network error' };
+    }
+  }
+
+  /**
+   * Login with Telegram (or bind if already authenticated)
+   * @param telegramAuthData - Telegram authentication data received from Telegram Login Widget
+   * Should include: id, first_name, username (optional), photo_url (optional), auth_date, hash
+   *
+   * If user is authenticated (has JWT token), this will bind Telegram to their account
+   * If user is not authenticated, this will log in/register with Telegram
+   */
+  async loginWithTelegram(telegramAuthData: any): Promise<{ success: boolean; error?: string; isBind?: boolean }> {
+    try {
+      // Validate required fields
+      if (!telegramAuthData.id || !telegramAuthData.hash) {
+        return { success: false, error: 'Invalid Telegram authentication data' };
+      }
+
+      const token = this.getAccessToken();
+      const headers: any = {
+        'Content-Type': 'application/json',
+      };
+
+      // If user is authenticated, include token for binding
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`${API_CONFIG.BASE_URL}/auth/telegram`, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(telegramAuthData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return { success: false, error: data.error || 'Telegram operation failed' };
+      }
+
+      // If binding (user was already authenticated)
+      if (data.message && data.message.includes('linked')) {
+        // Update current user data
+        if (data.user) {
+          this.currentUserSignal.set(data.user);
+          localStorage.setItem(this.USER_KEY, JSON.stringify(data.user));
+        }
+        return { success: true, isBind: true };
+      }
+
+      // If login/register (user was not authenticated)
+      if (data.access_token) {
+        this.storeAuth(data);
+        return { success: true, isBind: false };
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error during Telegram operation:', error);
+      return { success: false, error: 'Network error' };
+    }
+  }
+
+  /**
+   * Bind Telegram account to current authenticated user
+   * @param telegramAuthData - Telegram authentication data
+   */
+  async bindTelegram(telegramAuthData: any): Promise<{ success: boolean; error?: string }> {
+    // This is just an alias for loginWithTelegram when authenticated
+    // The backend will handle the binding logic based on JWT presence
+    return this.loginWithTelegram(telegramAuthData);
+  }
+
+  /**
+   * Unbind Telegram from current user account
+   */
+  async unbindTelegram(): Promise<{ success: boolean; error?: string }> {
+    try {
+      const token = this.getAccessToken();
+      if (!token) {
+        return { success: false, error: 'Not authenticated' };
+      }
+
+      const response = await fetch(`${API_CONFIG.BASE_URL}/auth/telegram`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return { success: false, error: data.error || 'Failed to unbind Telegram' };
+      }
+
+      // Update user data (remove Telegram info)
+      const user = this.currentUserSignal();
+      if (user) {
+        const updatedUser = { ...user, telegram_id: undefined, telegram_username: undefined };
+        this.currentUserSignal.set(updatedUser);
+        localStorage.setItem(this.USER_KEY, JSON.stringify(updatedUser));
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error unbinding Telegram:', error);
       return { success: false, error: 'Network error' };
     }
   }

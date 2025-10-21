@@ -134,35 +134,15 @@ export class ProfileComponent implements OnInit, OnDestroy {
     try {
       console.log('Binding Telegram account:', telegramUser);
       
-      // Send to backend to bind Telegram account
-      const response = await this.authService.authenticatedFetch(
-        `${API_CONFIG.BASE_URL}/user/bind-telegram`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            telegram_id: telegramUser.id,
-            telegram_username: telegramUser.username,
-            first_name: telegramUser.first_name,
-            last_name: telegramUser.last_name,
-            photo_url: telegramUser.photo_url,
-            auth_date: telegramUser.auth_date,
-            hash: telegramUser.hash
-          }),
-        }
-      );
+      // Use AuthService to bind Telegram account
+      const result = await this.authService.bindTelegram(telegramUser);
       
-      if (response.ok) {
-        alert('✅ Telegram account bound successfully! Reloading...');
+      if (result.success) {
+        alert('✅ Telegram account linked successfully!');
         // Refresh user profile to get updated info
         await this.authService.fetchUserProfile();
-        // Reload page to show connected status
-        window.location.reload();
       } else {
-        const error = await response.json();
-        alert('Failed to bind Telegram: ' + (error.error || 'Unknown error'));
+        alert('Failed to bind Telegram: ' + (result.error || 'Unknown error'));
       }
       
     } catch (error) {
@@ -183,20 +163,15 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.isUnlinkingTelegram.set(true);
 
     try {
-      const response = await this.authService.authenticatedFetch(
-        `${API_CONFIG.BASE_URL}/user/unlink-telegram`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' }
-        }
-      );
+      // Use AuthService to unbind Telegram
+      const result = await this.authService.unbindTelegram();
 
-      if (response.ok) {
+      if (result.success) {
+        alert('✅ Telegram account unlinked successfully');
         // Refresh user profile
         await this.authService.fetchUserProfile();
-        console.log('Telegram account unlinked successfully');
       } else {
-        alert('Failed to unlink Telegram account');
+        alert('Failed to unlink Telegram: ' + (result.error || 'Unknown error'));
       }
     } catch (error) {
       console.error('Error unlinking Telegram:', error);

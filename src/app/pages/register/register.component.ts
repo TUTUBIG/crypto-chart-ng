@@ -1,8 +1,14 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
+
+declare global {
+  interface Window {
+    onTelegramAuthRegister?: (user: any) => void;
+  }
+}
 
 @Component({
   selector: 'app-register',
@@ -11,7 +17,7 @@ import { AuthService } from '../../../services/auth.service';
   templateUrl: './register.component.html',
   styleUrls: ['./register.component.scss']
 })
-export class RegisterComponent {
+export class RegisterComponent implements OnInit, OnDestroy {
   email = signal('');
   password = signal('');
   confirmPassword = signal('');
@@ -22,11 +28,72 @@ export class RegisterComponent {
   successMessage = signal<string | null>(null);
   codeSent = signal(false);
   countdown = signal(0);
+  
+  readonly TELEGRAM_BOT_USERNAME = 'fipulse_bot';
 
   constructor(
     private authService: AuthService,
     private router: Router
   ) {}
+  
+  ngOnInit(): void {
+    // Load Telegram Widget script
+    this.loadTelegramWidget();
+    
+    // Set up global callback for Telegram auth
+    window.onTelegramAuthRegister = (user: any) => {
+      this.handleTelegramAuth(user);
+    };
+  }
+  
+  ngOnDestroy(): void {
+    // Clean up global callback
+    delete window.onTelegramAuthRegister;
+  }
+  
+  private loadTelegramWidget(): void {
+    const script = document.createElement('script');
+    script.src = 'https://telegram.org/js/telegram-widget.js?22';
+    script.async = true;
+    script.setAttribute('data-telegram-login', this.TELEGRAM_BOT_USERNAME);
+    script.setAttribute('data-size', 'large');
+    script.setAttribute('data-radius', '8');
+    script.setAttribute('data-onauth', 'onTelegramAuthRegister(user)');
+    script.setAttribute('data-request-access', 'write');
+    
+    const container = document.getElementById('telegram-register-container');
+    if (container) {
+      container.appendChild(script);
+    }
+  }
+  
+  private async handleTelegramAuth(telegramUser: any): Promise<void> {
+    try {
+      this.isLoading.set(true);
+      this.error.set(null);
+      
+      console.log('Telegram registration data:', telegramUser);
+      
+      // Use AuthService to handle Telegram login/register
+      const result = await this.authService.loginWithTelegram(telegramUser);
+      
+      if (result.success) {
+        this.successMessage.set('Registration successful via Telegram!');
+        
+        setTimeout(() => {
+          this.router.navigate(['/dashboard']);
+        }, 500);
+      } else {
+        this.error.set(result.error || 'Telegram registration failed');
+      }
+      
+    } catch (error) {
+      console.error('Error during Telegram registration:', error);
+      this.error.set('Network error during Telegram registration');
+    } finally {
+      this.isLoading.set(false);
+    }
+  }
 
   async sendCode() {
     const emailValue = this.email();
