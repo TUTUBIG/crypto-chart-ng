@@ -1,4 +1,4 @@
-import { Component, signal, computed, OnInit, OnDestroy, effect } from '@angular/core';
+import { Component, signal, computed, OnInit, OnDestroy, AfterViewInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../services/auth.service';
@@ -19,7 +19,7 @@ declare global {
   templateUrl: './profile.component.html',
   styleUrls: ['./profile.component.scss']
 })
-export class ProfileComponent implements OnInit, OnDestroy {
+export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
   // Get user from AuthService
   currentUser = computed(() => this.authService.currentUser());
 
@@ -62,16 +62,25 @@ export class ProfileComponent implements OnInit, OnDestroy {
     // Subscribe to bot_started WebSocket events
     this.subscribeToBotStartedEvents();
 
-    // Watch for bot_started status changes and load widget when ready
+    // Watch for connection status changes and load widget when ready
     effect(() => {
-      const botStarted = this.currentUser()?.bot_started;
       const isConnected = this.isTelegramConnected;
       
-      if (botStarted && !isConnected) {
-        // Load widget after a short delay to ensure DOM is ready
-        setTimeout(() => this.loadTelegramWidgetForIntegration(), 100);
+      if (!isConnected) {
+        // Load widget when Telegram is not connected
+        setTimeout(() => this.loadTelegramWidgetForIntegration(), 300);
       }
     });
+  }
+
+  ngAfterViewInit(): void {
+    // Load widget if Telegram is not connected after view is initialized
+    // Use a delay to ensure Angular has fully rendered the conditional content
+    setTimeout(() => {
+      if (!this.isTelegramConnected) {
+        this.loadTelegramWidgetForIntegration();
+      }
+    }, 300);
   }
 
   ngOnDestroy(): void {
@@ -233,10 +242,27 @@ export class ProfileComponent implements OnInit, OnDestroy {
   }
 
   private loadTelegramWidgetForIntegration(): void {
-    const container = document.getElementById('telegram-integration-widget-container');
-    if (!container) {
+    // Check conditions before trying to load
+    if (this.isTelegramConnected) {
+      console.log('[Profile] Telegram already connected, skipping widget load');
       return;
     }
+
+    const container = document.getElementById('telegram-integration-widget-container');
+    if (!container) {
+      console.warn('[Profile] Widget container not found, retrying in 500ms...');
+      // Retry with longer delay if container doesn't exist yet
+      setTimeout(() => this.loadTelegramWidgetForIntegration(), 500);
+      return;
+    }
+
+    // Check if widget already loaded (prevent duplicate loading)
+    if (container.querySelector('script[src*="telegram-widget"]') || container.children.length > 0) {
+      console.log('[Profile] Telegram widget already loaded');
+      return;
+    }
+
+    console.log('[Profile] Loading Telegram widget for integration...');
 
     // Clear existing content
     container.innerHTML = '';
@@ -249,6 +275,14 @@ export class ProfileComponent implements OnInit, OnDestroy {
     script.setAttribute('data-radius', '8');
     script.setAttribute('data-onauth', 'onTelegramAuthProfile(user)');
     script.setAttribute('data-request-access', 'write');
+    
+    script.onerror = () => {
+      console.error('[Profile] Failed to load Telegram widget script');
+    };
+
+    script.onload = () => {
+      console.log('[Profile] Telegram widget script loaded successfully');
+    };
     
     container.appendChild(script);
   }
@@ -328,6 +362,9 @@ export class ProfileComponent implements OnInit, OnDestroy {
         // Stop polling since bot is now started
         this.stopPollingBotStatus();
         
+        // Load widget after user data is refreshed
+        setTimeout(() => this.loadTelegramWidgetForIntegration(), 300);
+        
         // Show success message (optional)
         console.log('[Profile] ✅ Bot is now connected and ready!');
       }
@@ -377,6 +414,9 @@ export class ProfileComponent implements OnInit, OnDestroy {
             console.log('[Profile] ✅ Bot started detected via polling!');
             this.stopPollingBotStatus();
             this.pollingMessage.set('✅ Bot is now connected and ready!');
+            
+            // Load widget after user data is updated
+            setTimeout(() => this.loadTelegramWidgetForIntegration(), 300);
             
             // Clear the message after a short delay
             setTimeout(() => {

@@ -12,7 +12,7 @@ export const API_CONFIG = {
     SINGLE_CANDLE: '/single-candle',
 
     // WebSocket endpoint for real-time data
-    WEBSOCKET: 'wss://crypto-pump.bigtutu.workers.dev/ws',
+    WEBSOCKET: 'wss://api.fipulse.xyz/ws',
 
     // Authentication
     AUTH_SEND_CODE: '/auth/send-code',

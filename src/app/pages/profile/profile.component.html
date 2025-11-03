@@ -74,9 +74,9 @@
 
             <div class="telegram-connect-section">
               <div class="connect-steps">
-                <div class="connect-step" [class.completed]="currentUser()?.bot_started">
-                  <span class="step-badge" [class.completed]="currentUser()?.bot_started">
-                    @if (currentUser()?.bot_started) {
+                <div class="connect-step" [class.completed]="isTelegramConnected">
+                  <span class="step-badge" [class.completed]="isTelegramConnected">
+                    @if (isTelegramConnected) {
                       <svg viewBox="0 0 24 24" fill="currentColor">
                         <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
                       </svg>
@@ -85,22 +85,22 @@
                     }
                   </span>
                   <div class="step-text">
-                    <strong>Start the bot</strong> 
-                    @if (currentUser()?.bot_started) {
+                    <strong>Connect your account</strong> 
+                    @if (isTelegramConnected) {
                       <span class="step-status-text">✓ Completed</span>
                     } @else {
-                      to enable message delivery
+                      using Telegram Login
                     }
                   </div>
                 </div>
-                <div class="connect-step" [class.active]="currentUser()?.bot_started">
-                  <span class="step-badge" [class.active]="currentUser()?.bot_started">2</span>
+                <div class="connect-step" [class.active]="isTelegramConnected">
+                  <span class="step-badge" [class.active]="isTelegramConnected">2</span>
                   <div class="step-text">
-                    <strong>Connect your account</strong> 
-                    @if (currentUser()?.bot_started) {
+                    <strong>Start the bot</strong> 
+                    @if (isTelegramConnected) {
                       <span class="step-emphasis">← Next step</span>
                     } @else {
-                      using Telegram Login
+                      to enable message delivery
                     }
                   </div>
                 </div>
@@ -112,14 +112,14 @@
                 </div>
               </div>
 
-              @if (currentUser()?.bot_started) {
+              @if (!isTelegramConnected) {
                 <div class="telegram-widget-container">
                   <p class="widget-label">Connect your Telegram account:</p>
                   <div id="telegram-integration-widget-container"></div>
                 </div>
               }
 
-              @if (currentUser()?.bot_started) {
+              @if (isTelegramConnected && currentUser()?.bot_started) {
                 <div class="bot-status-info success">
                   <svg class="status-icon" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
@@ -129,7 +129,17 @@
                     <span class="status-subtext">You started the bot {{ formatBotStartedDate(currentUser()?.bot_started_at) }}</span>
                   </div>
                 </div>
-              } @else if (isPollingBotStatus()) {
+              } @else if (isTelegramConnected && !currentUser()?.bot_started) {
+                <div class="bot-status-info info">
+                  <svg class="status-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                  </svg>
+                  <div>
+                    <strong>Start the bot</strong>
+                    <span class="status-subtext">Click the button below to start the bot on Telegram</span>
+                  </div>
+                </div>
+              } @else if (!isTelegramConnected && isPollingBotStatus()) {
                 <div class="bot-status-info info">
                   <svg class="status-icon spinning" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>
@@ -139,20 +149,20 @@
                     <span class="status-subtext">{{ pollingMessage() }}</span>
                   </div>
                 </div>
-              } @else {
+              } @else if (!isTelegramConnected) {
                 <div class="bot-status-info warning">
                   <svg class="status-icon" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
                   </svg>
                   <div>
-                    <strong>Start the bot first</strong>
-                    <span class="status-subtext">Click the button below to start the bot on Telegram</span>
+                    <strong>Connect your Telegram account first</strong>
+                    <span class="status-subtext">Use the widget above to connect your account</span>
                   </div>
                 </div>
               }
 
               <div class="connect-actions">
-                @if (!currentUser()?.bot_started) {
+                @if (isTelegramConnected && !currentUser()?.bot_started) {
                   <a 
                     [href]="telegramBotLink" 
                     target="_blank" 
