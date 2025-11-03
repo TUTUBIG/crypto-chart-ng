@@ -59,22 +59,9 @@ export class App implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     console.log('[App] Initializing global WebSocket connection...');
-    
-    // Connect to WebSocket if user is authenticated
-    if (this.authService.isAuthenticated()) {
-      this.wsService.connect();
-    }
-    
-    // Reconnect WebSocket when user logs in
-    this.authService.isAuthenticated$.subscribe(isAuth => {
-      if (isAuth && !this.wsService.isConnected()) {
-        console.log('[App] User authenticated, connecting WebSocket...');
-        this.wsService.connect();
-      } else if (!isAuth && this.wsService.isConnected()) {
-        console.log('[App] User logged out, disconnecting WebSocket...');
-        this.wsService.disconnect();
-      }
-    });
+
+    // Connect to WebSocket immediately without authorization check
+    this.wsService.connect();
   }
 
   ngOnDestroy(): void {

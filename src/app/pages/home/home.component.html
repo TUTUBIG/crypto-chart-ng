@@ -70,7 +70,7 @@
                   @if (token.icon_url) {
                     <img [src]="token.icon_url" [alt]="token.token_symbol" class="token-icon">
                   } @else {
-                    <div class="token-icon-placeholder">{{ token.token_symbol?.charAt(0) || '?' }}</div>
+                    <div class="token-icon-placeholder">{{ token.token_symbol!.charAt(0) || '?' }}</div>
                   }
                   <div class="token-details">
                     <h3 class="token-symbol">{{ token.token_symbol || 'N/A' }}</h3>

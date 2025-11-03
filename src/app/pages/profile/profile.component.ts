@@ -24,18 +24,27 @@ export class ProfileComponent implements OnInit, OnDestroy {
   currentUser = computed(() => this.authService.currentUser());
 
   // Notification preferences
-  emailNotifications = signal(true);
-  telegramNotifications = signal(false);
+  emailNotifications = signal<boolean | null>(null);
+  telegramNotifications = signal<boolean | null>(null);
+  preferencesLoaded = signal(false);
 
   // UI states
   showTelegramGuide = signal(false);
   isUnlinkingTelegram = signal(false);
+  isPollingBotStatus = signal(false);
+  pollingMessage = signal<string>('');
 
   // Telegram bot info
   readonly TELEGRAM_BOT_USERNAME = 'fipulse_bot'; // Replace with actual bot username
   
   // WebSocket subscription
   private botStartedSubscription?: Subscription;
+  
+  // Long polling for bot status
+  private pollingInterval?: any;
+  private pollingTimeout?: any;
+  private readonly POLLING_INTERVAL = 3000; // Poll every 3 seconds
+  private readonly POLLING_MAX_DURATION = 120000; // Stop after 2 minutes
 
   constructor(
     private authService: AuthService,
@@ -67,6 +76,9 @@ export class ProfileComponent implements OnInit, OnDestroy {
     if (this.botStartedSubscription) {
       this.botStartedSubscription.unsubscribe();
     }
+    
+    // Stop long polling if active
+    this.stopPollingBotStatus();
   }
 
   get isTelegramConnected(): boolean {
@@ -96,14 +108,43 @@ export class ProfileComponent implements OnInit, OnDestroy {
         const data = await response.json();
         this.emailNotifications.set(data.email_enabled ?? true);
         this.telegramNotifications.set(data.telegram_enabled ?? false);
+        this.preferencesLoaded.set(true);
+      } else if (response.status === 404) {
+        // Endpoint not available yet, use default values
+        console.log('[Profile] Notification preferences endpoint not available, using defaults');
+        this.emailNotifications.set(true);
+        this.telegramNotifications.set(false);
+        this.preferencesLoaded.set(true);
+      } else {
+        console.error('[Profile] Failed to load notification preferences:', response.status, response.statusText);
+        // Set defaults on error
+        this.emailNotifications.set(true);
+        this.telegramNotifications.set(false);
+        this.preferencesLoaded.set(true);
       }
     } catch (error) {
-      console.error('Error loading notification preferences:', error);
+      // Handle network errors gracefully
+      if (error instanceof Error && error.message.includes('Not authenticated')) {
+        console.log('[Profile] Not authenticated, skipping notification preferences load');
+      } else {
+        console.error('[Profile] Error loading notification preferences:', error);
+      }
+      // Set defaults on error
+      this.emailNotifications.set(true);
+      this.telegramNotifications.set(false);
+      this.preferencesLoaded.set(true);
     }
   }
 
   async updateNotificationPreference(type: 'email' | 'telegram', enabled: boolean): Promise<void> {
     try {
+      // Update UI state immediately for better UX
+      if (type === 'email') {
+        this.emailNotifications.set(enabled);
+      } else {
+        this.telegramNotifications.set(enabled);
+      }
+
       const response = await this.authService.authenticatedFetch(
         `${API_CONFIG.BASE_URL}/user/notification-preferences`,
         {
@@ -116,15 +157,29 @@ export class ProfileComponent implements OnInit, OnDestroy {
       );
 
       if (response.ok) {
-        if (type === 'email') {
-          this.emailNotifications.set(enabled);
-        } else {
-          this.telegramNotifications.set(enabled);
-        }
-        console.log(`${type} notifications ${enabled ? 'enabled' : 'disabled'}`);
+        console.log(`[Profile] ${type} notifications ${enabled ? 'enabled' : 'disabled'}`);
+      } else if (response.status === 404) {
+        // Endpoint not available yet, keep local state but warn user
+        console.warn(`[Profile] Notification preferences endpoint not available. Preference saved locally only.`);
+        // Revert to previous state if needed, or keep the local change
+        // For now, we'll keep the local change
+      } else {
+        console.error(`[Profile] Failed to update ${type} notification preference:`, response.status, response.statusText);
+        // Optionally revert on error
+        // if (type === 'email') {
+        //   this.emailNotifications.set(!enabled);
+        // } else {
+        //   this.telegramNotifications.set(!enabled);
+        // }
       }
     } catch (error) {
-      console.error(`Error updating ${type} notification preference:`, error);
+      // Handle network errors
+      if (error instanceof Error && error.message.includes('Not authenticated')) {
+        console.warn('[Profile] Not authenticated, cannot save notification preferences');
+      } else {
+        console.error(`[Profile] Error updating ${type} notification preference:`, error);
+      }
+      // UI state was already updated, so it remains changed
     }
   }
 
@@ -257,10 +312,113 @@ export class ProfileComponent implements OnInit, OnDestroy {
         // Refresh user data to get updated bot_started status
         await this.authService.refreshCurrentUser();
         
+        // Stop polling since bot is now started
+        this.stopPollingBotStatus();
+        
         // Show success message (optional)
         console.log('[Profile] ✅ Bot is now connected and ready!');
       }
     });
+  }
+
+  /**
+   * Start long polling to check bot started status
+   * Called when user clicks "Start bot" button
+   */
+  startPollingBotStatus(): void {
+    // Don't start if already polling
+    if (this.isPollingBotStatus()) {
+      return;
+    }
+
+    // Don't start if bot is already started
+    if (this.currentUser()?.bot_started) {
+      return;
+    }
+
+    console.log('[Profile] Starting long polling for bot status...');
+    this.isPollingBotStatus.set(true);
+    this.pollingMessage.set('Waiting for bot start...');
+
+    const startTime = Date.now();
+
+    // Start polling interval
+    this.pollingInterval = setInterval(async () => {
+      try {
+        // Check if max duration exceeded
+        const elapsed = Date.now() - startTime;
+        if (elapsed >= this.POLLING_MAX_DURATION) {
+          console.log('[Profile] Polling timeout reached');
+          this.stopPollingBotStatus();
+          this.pollingMessage.set('Timeout: Please try refreshing the page or contact support.');
+          return;
+        }
+
+        // Poll user profile to check bot_started status
+        const result = await this.authService.fetchUserProfile();
+        
+        if (result.success) {
+          const user = this.authService.currentUser();
+          
+          if (user?.bot_started) {
+            console.log('[Profile] ✅ Bot started detected via polling!');
+            this.stopPollingBotStatus();
+            this.pollingMessage.set('✅ Bot is now connected and ready!');
+            
+            // Clear the message after a short delay
+            setTimeout(() => {
+              this.pollingMessage.set('');
+            }, 3000);
+          } else {
+            // Still waiting, update message
+            const elapsedSeconds = Math.floor(elapsed / 1000);
+            this.pollingMessage.set(`Checking... (${elapsedSeconds}s)`);
+          }
+        } else {
+          console.error('[Profile] Failed to fetch user profile:', result.error);
+        }
+      } catch (error) {
+        console.error('[Profile] Error during polling:', error);
+      }
+    }, this.POLLING_INTERVAL);
+
+    // Set timeout to stop polling after max duration
+    this.pollingTimeout = setTimeout(() => {
+      if (this.isPollingBotStatus()) {
+        console.log('[Profile] Polling stopped due to timeout');
+        this.stopPollingBotStatus();
+        this.pollingMessage.set('Timeout: Please try refreshing the page.');
+      }
+    }, this.POLLING_MAX_DURATION);
+  }
+
+  /**
+   * Stop long polling for bot status
+   */
+  stopPollingBotStatus(): void {
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+      this.pollingInterval = undefined;
+    }
+    
+    if (this.pollingTimeout) {
+      clearTimeout(this.pollingTimeout);
+      this.pollingTimeout = undefined;
+    }
+    
+    this.isPollingBotStatus.set(false);
+  }
+
+  /**
+   * Handle click on "Start bot" button
+   * Opens Telegram and starts polling
+   */
+  onStartBotClick(): void {
+    // Start polling when user clicks the button
+    this.startPollingBotStatus();
+    
+    // The link will open Telegram in a new tab
+    // Polling will continue in the background
   }
 }
 

@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, effect } from '@angular/core';
 import { Subject, Observable, filter, map } from 'rxjs';
 import { AuthService } from './auth.service';
 import { API_CONFIG } from '../config/api.config';
@@ -42,6 +42,18 @@ export class WebSocketService {
   constructor(private authService: AuthService) {
     console.log('[WebSocket] Service initialized');
     console.log('[WebSocket] URL:', this.WS_URL);
+    
+    // Watch for user changes and send user_id when user logs in or changes
+    effect(() => {
+      const user = this.authService.currentUser();
+      const isAuthenticated = this.authService.isAuthenticated();
+      
+      // Send user_id when user is authenticated and WebSocket is connected
+      if (isAuthenticated && user?.id && this.isConnected()) {
+        console.log('[WebSocket] User authenticated, sending user_id:', user.id);
+        this.sendUserId(user.id);
+      }
+    });
   }
 
   /**
@@ -69,11 +81,18 @@ export class WebSocketService {
         this.connectionError.set(null);
         this.reconnectAttempts = 0;
         
-        // Send initial subscription message
+        // Send initial subscription message with user_id if authenticated
+        const user = this.authService.currentUser();
+        const userId = user?.id;
+        
+        if (userId) {
+          console.log('[WebSocket] Sending user_id on connection:', userId);
+        }
+        
         this.sendMessage({
           type: 'subscribe',
           data: {
-            user_id: this.authService.currentUser()?.id,
+            user_id: userId || null,
             channels: ['bot_started', 'candles', 'price_alerts']
           }
         });
@@ -143,6 +162,20 @@ export class WebSocketService {
       console.log('[WebSocket] Attempting to reconnect...');
       this.connect();
     }, delay);
+  }
+
+  /**
+   * Send user_id to WebSocket server
+   */
+  private sendUserId(userId: number): void {
+    if (this.ws?.readyState === WebSocket.OPEN) {
+      this.sendMessage({
+        type: 'user_id',
+        data: {
+          user_id: userId
+        }
+      });
+    }
   }
 
   /**

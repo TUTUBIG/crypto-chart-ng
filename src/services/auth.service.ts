@@ -1,5 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import { API_CONFIG } from '../config/api.config';
+import { Observable } from 'rxjs';
 
 export interface User {
   id: number;
