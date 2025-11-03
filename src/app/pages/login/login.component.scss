@@ -75,6 +75,21 @@
   }
 }
 
+.telegram-widget-wrapper {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px 0;
+  
+  #telegram-login-widget-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 40px;
+  }
+}
+
 .divider {
   display: flex;
   align-items: center;

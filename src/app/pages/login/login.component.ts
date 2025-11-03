@@ -1,4 +1,4 @@
-import { Component, signal, OnInit, OnDestroy } from '@angular/core';
+import { Component, signal, OnInit, OnDestroy, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -18,7 +18,7 @@ declare global {
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.scss']
 })
-export class LoginComponent implements OnInit, OnDestroy {
+export class LoginComponent implements OnInit, OnDestroy, AfterViewInit {
   email = signal('');
   password = signal('');
   verificationCode = signal('');
@@ -39,11 +39,22 @@ export class LoginComponent implements OnInit, OnDestroy {
   ) {}
   
   ngOnInit(): void {
-    // OAuth callbacks are handled by the backend redirect
+    // Set up global callback for Telegram login
+    window.onTelegramAuth = (user: any) => {
+      this.handleTelegramLogin(user);
+    };
+  }
+  
+  ngAfterViewInit(): void {
+    // Load Telegram widget after view is initialized
+    setTimeout(() => {
+      this.loadTelegramWidget();
+    }, 300);
   }
   
   ngOnDestroy(): void {
-    // Cleanup if needed
+    // Clean up global callback
+    delete window.onTelegramAuth;
   }
 
   async loginWithGoogle() {
@@ -103,23 +114,67 @@ export class LoginComponent implements OnInit, OnDestroy {
     }
   }
 
-  async loginWithTelegram() {
+  async handleTelegramLogin(telegramUser: any): Promise<void> {
     this.isLoading.set(true);
     this.error.set(null);
     
     try {
-      const result = await this.authService.loginWithOAuth('telegram');
-      if (result.authUrl) {
-        window.location.href = result.authUrl;
+      console.log('[Login] Telegram auth received:', telegramUser);
+      
+      const result = await this.authService.loginWithTelegram(telegramUser);
+      
+      if (result.success) {
+        this.successMessage.set('Login successful!');
+        setTimeout(() => {
+          this.router.navigate(['/dashboard']);
+        }, 500);
       } else {
-        this.error.set('Failed to initiate Telegram login');
-        this.isLoading.set(false);
+        this.error.set(result.error || 'Failed to login with Telegram');
       }
     } catch (error) {
-      console.error('Error during Telegram login:', error);
-      this.error.set('Failed to initiate Telegram login');
+      console.error('[Login] Error during Telegram login:', error);
+      this.error.set('Failed to login with Telegram');
+    } finally {
       this.isLoading.set(false);
     }
+  }
+
+  private loadTelegramWidget(): void {
+    const container = document.getElementById('telegram-login-widget-container');
+    if (!container) {
+      console.warn('[Login] Widget container not found, retrying in 500ms...');
+      setTimeout(() => this.loadTelegramWidget(), 500);
+      return;
+    }
+
+    // Check if widget already loaded (prevent duplicate loading)
+    if (container.querySelector('script[src*="telegram-widget"]') || container.children.length > 0) {
+      console.log('[Login] Telegram widget already loaded');
+      return;
+    }
+
+    console.log('[Login] Loading Telegram widget...');
+
+    // Clear existing content
+    container.innerHTML = '';
+    
+    const script = document.createElement('script');
+    script.src = 'https://telegram.org/js/telegram-widget.js?22';
+    script.async = true;
+    script.setAttribute('data-telegram-login', this.TELEGRAM_BOT_USERNAME);
+    script.setAttribute('data-size', 'medium');
+    script.setAttribute('data-onauth', 'onTelegramAuth(user)');
+    script.setAttribute('data-request-access', 'write');
+    
+    script.onerror = () => {
+      console.error('[Login] Failed to load Telegram widget script');
+    };
+
+    script.onload = () => {
+      console.log('[Login] Telegram widget script loaded successfully');
+    };
+
+    container.appendChild(script);
   }
 
   async toggleLoginMethod() {
