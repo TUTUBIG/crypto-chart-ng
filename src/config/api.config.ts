@@ -1,7 +1,7 @@
 // API Configuration for Angular
 export const API_CONFIG = {
   // Base URL for API requests
-  BASE_URL: 'https://crypto-pump.bigtutu.workers.dev',
+  BASE_URL: 'https://api.fipulse.xyz',
 
   // API Endpoints
   ENDPOINTS: {

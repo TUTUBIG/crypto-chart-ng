@@ -1,4 +1,4 @@
-import { Component, signal, computed, OnInit, OnDestroy } from '@angular/core';
+import { Component, signal, computed, OnInit, OnDestroy, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../services/auth.service';
@@ -54,11 +54,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadNotificationPreferences();
 
-    // Load Telegram Widget if not connected
-    if (!this.isTelegramConnected) {
-      setTimeout(() => this.loadTelegramWidget(), 100);
-    }
-
     // Set up global callback for Telegram binding
     window.onTelegramAuthProfile = (user: any) => {
       this.handleTelegramBinding(user);
@@ -66,6 +61,17 @@ export class ProfileComponent implements OnInit, OnDestroy {
     
     // Subscribe to bot_started WebSocket events
     this.subscribeToBotStartedEvents();
+
+    // Watch for bot_started status changes and load widget when ready
+    effect(() => {
+      const botStarted = this.currentUser()?.bot_started;
+      const isConnected = this.isTelegramConnected;
+      
+      if (botStarted && !isConnected) {
+        // Load widget after a short delay to ensure DOM is ready
+        setTimeout(() => this.loadTelegramWidgetForIntegration(), 100);
+      }
+    });
   }
 
   ngOnDestroy(): void {
@@ -226,18 +232,25 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.showTelegramGuide.update(v => !v);
   }
 
-  async connectTelegram(): Promise<void> {
-    try {
-      const result = await this.authService.loginWithOAuth('telegram');
-      if (result.authUrl) {
-        window.location.href = result.authUrl;
-      } else {
-        alert('Failed to initiate Telegram connection. Please try again.');
-      }
-    } catch (error) {
-      console.error('Error connecting Telegram:', error);
-      alert('Failed to connect Telegram. Please try again.');
+  private loadTelegramWidgetForIntegration(): void {
+    const container = document.getElementById('telegram-integration-widget-container');
+    if (!container) {
+      return;
     }
+
+    // Clear existing content
+    container.innerHTML = '';
+    
+    const script = document.createElement('script');
+    script.src = 'https://telegram.org/js/telegram-widget.js?22';
+    script.async = true;
+    script.setAttribute('data-telegram-login', this.TELEGRAM_BOT_USERNAME);
+    script.setAttribute('data-size', 'large');
+    script.setAttribute('data-radius', '8');
+    script.setAttribute('data-onauth', 'onTelegramAuthProfile(user)');
+    script.setAttribute('data-request-access', 'write');
+    
+    container.appendChild(script);
   }
 
   async unlinkTelegram(): Promise<void> {

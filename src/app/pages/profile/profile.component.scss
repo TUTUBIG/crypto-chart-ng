@@ -515,6 +515,29 @@
   gap: 24px;
 }
 
+.telegram-widget-container {
+  margin-top: 16px;
+  padding: 20px;
+  background: rgba(59, 130, 246, 0.05);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 8px;
+  text-align: center;
+
+  .widget-label {
+    margin: 0 0 16px 0;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  #telegram-integration-widget-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 40px;
+  }
+}
+
 .connect-steps {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));

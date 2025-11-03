@@ -100,7 +100,7 @@
                     @if (currentUser()?.bot_started) {
                       <span class="step-emphasis">← Next step</span>
                     } @else {
-                      using OAuth
+                      using Telegram Login
                     }
                   </div>
                 </div>
@@ -111,6 +111,13 @@
                   </div>
                 </div>
               </div>
+
+              @if (currentUser()?.bot_started) {
+                <div class="telegram-widget-container">
+                  <p class="widget-label">Connect your Telegram account:</p>
+                  <div id="telegram-integration-widget-container"></div>
+                </div>
+              }
 
               @if (currentUser()?.bot_started) {
                 <div class="bot-status-info success">
@@ -166,16 +173,6 @@
                     }
                   </a>
                 }
-                <button 
-                  class="btn-connect" 
-                  [class.btn-primary-action]="currentUser()?.bot_started"
-                  (click)="connectTelegram()"
-                  [disabled]="!currentUser()?.bot_started">
-                  <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-                  </svg>
-                  Connect Telegram
-                </button>
                 <button class="btn-info-toggle" (click)="toggleTelegramGuide()">
                   <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
