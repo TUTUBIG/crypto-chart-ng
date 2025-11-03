@@ -21,6 +21,13 @@ export const API_CONFIG = {
     AUTH_REFRESH: '/auth/refresh',
     AUTH_LOGOUT: '/auth/logout',
     AUTH_ME: '/auth/me',
+    AUTH_RESET_PASSWORD: '/auth/reset-password',
+
+    // Tokens
+    TOKENS: '/tokens',
+    TOKENS_BY_TAG: (tag: string) => `/tokens/tag/${tag}`,
+    TOKEN_TAGS: (chainId: string, tokenAddress: string) => `/tokens/${chainId}/${tokenAddress}/tags`,
+    TOKEN_TAG_DELETE: (chainId: string, tokenAddress: string, tag: string) => `/tokens/${chainId}/${tokenAddress}/tags/${tag}`,
 
     // Watched Tokens
     WATCHED_TOKENS: '/watched-tokens',

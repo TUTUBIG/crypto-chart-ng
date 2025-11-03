@@ -6,6 +6,13 @@ export interface User {
   email?: string;
   telegram_id?: string;
   telegram_username?: string;
+  google_id?: string;
+  apple_id?: string;
+  x_id?: string;
+  full_name?: string;
+  avatar_url?: string;
+  bot_started?: boolean;
+  bot_started_at?: string;
   created_at: string;
   last_login_at?: string;
 }
@@ -104,7 +111,7 @@ export class AuthService {
   /**
    * Send verification code to email
    */
-  async sendVerificationCode(email: string, purpose: 'register' | 'login'): Promise<{ success: boolean; error?: string }> {
+  async sendVerificationCode(email: string, purpose: 'register' | 'login' | 'reset-password'): Promise<{ success: boolean; error?: string }> {
     try {
       const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.AUTH_SEND_CODE}`, {
         method: 'POST',
@@ -154,6 +161,36 @@ export class AuthService {
       return { success: true };
     } catch (error) {
       console.error('Error during registration:', error);
+      return { success: false, error: 'Network error' };
+    }
+  }
+
+  /**
+   * Reset password with email, verification code, and new password
+   */
+  async resetPassword(email: string, verificationCode: string, newPassword: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.AUTH_RESET_PASSWORD}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          verification_code: verificationCode,
+          new_password: newPassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return { success: false, error: data.error || 'Password reset failed' };
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error during password reset:', error);
       return { success: false, error: 'Network error' };
     }
   }
@@ -286,6 +323,14 @@ export class AuthService {
   }
 
   /**
+   * Refresh current user data from server
+   * Alias for fetchUserProfile() for better clarity
+   */
+  async refreshCurrentUser(): Promise<{ success: boolean; error?: string }> {
+    return this.fetchUserProfile();
+  }
+
+  /**
    * Login with Telegram (or bind if already authenticated)
    * @param telegramAuthData - Telegram authentication data received from Telegram Login Widget
    * Should include: id, first_name, username (optional), photo_url (optional), auth_date, hash
@@ -356,6 +401,32 @@ export class AuthService {
   }
 
   /**
+   * Initiate OAuth login with specified provider
+   * @param provider - OAuth provider ('google', 'apple', 'x', 'telegram')
+   */
+  async loginWithOAuth(provider: 'google' | 'apple' | 'x' | 'telegram'): Promise<{ authUrl?: string; error?: string }> {
+    try {
+      const response = await fetch(`${API_CONFIG.BASE_URL}/auth/oauth/${provider}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return { error: data.error || `Failed to initiate ${provider} login` };
+      }
+
+      return { authUrl: data.auth_url };
+    } catch (error) {
+      console.error(`Error initiating ${provider} login:`, error);
+      return { error: 'Network error' };
+    }
+  }
+
+  /**
    * Unbind Telegram from current user account
    */
   async unbindTelegram(): Promise<{ success: boolean; error?: string }> {
@@ -389,6 +460,45 @@ export class AuthService {
       return { success: true };
     } catch (error) {
       console.error('Error unbinding Telegram:', error);
+      return { success: false, error: 'Network error' };
+    }
+  }
+
+  /**
+   * Mark that the user has started the Telegram bot
+   */
+  async markBotStarted(): Promise<{ success: boolean; error?: string }> {
+    try {
+      const token = this.getAccessToken();
+      if (!token) {
+        return { success: false, error: 'Not authenticated' };
+      }
+
+      const response = await fetch(`${API_CONFIG.BASE_URL}/user/bot-started`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return { success: false, error: data.error || 'Failed to mark bot as started' };
+      }
+
+      // Update user data
+      const user = this.currentUserSignal();
+      if (user) {
+        const updatedUser = { ...user, bot_started: true, bot_started_at: new Date().toISOString() };
+        this.currentUserSignal.set(updatedUser);
+        localStorage.setItem(this.USER_KEY, JSON.stringify(updatedUser));
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error marking bot as started:', error);
       return { success: false, error: 'Network error' };
     }
   }

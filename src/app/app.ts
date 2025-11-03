@@ -1,6 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import {RouterLink, RouterOutlet} from '@angular/router';
 import { HeaderComponent } from './components/header/header.component';
+import { WebSocketService } from '../services/websocket.service';
+import { AuthService } from '../services/auth.service';
 
 @Component({
   selector: 'app-root',
@@ -49,4 +51,34 @@ import { HeaderComponent } from './components/header/header.component';
   `,
   styleUrl: './app.css'
 })
-export class App {}
+export class App implements OnInit, OnDestroy {
+  constructor(
+    private wsService: WebSocketService,
+    private authService: AuthService
+  ) {}
+
+  ngOnInit(): void {
+    console.log('[App] Initializing global WebSocket connection...');
+    
+    // Connect to WebSocket if user is authenticated
+    if (this.authService.isAuthenticated()) {
+      this.wsService.connect();
+    }
+    
+    // Reconnect WebSocket when user logs in
+    this.authService.isAuthenticated$.subscribe(isAuth => {
+      if (isAuth && !this.wsService.isConnected()) {
+        console.log('[App] User authenticated, connecting WebSocket...');
+        this.wsService.connect();
+      } else if (!isAuth && this.wsService.isConnected()) {
+        console.log('[App] User logged out, disconnecting WebSocket...');
+        this.wsService.disconnect();
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    console.log('[App] Disconnecting global WebSocket...');
+    this.wsService.disconnect();
+  }
+}

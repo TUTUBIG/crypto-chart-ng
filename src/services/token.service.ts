@@ -82,6 +82,101 @@ export class TokenService {
     }
   }
 
+  /**
+   * Fetch tokens by tag (e.g., 'trending', 'new', 'popular')
+   */
+  async fetchTokensByTag(tag: string, limit: number = 20, chainId?: string): Promise<Token[]> {
+    try {
+      let params = new HttpParams().set('limit', limit.toString());
+      if (chainId) {
+        params = params.set('chainId', chainId);
+      }
+
+      const response = await firstValueFrom(
+        this.http.get<any>(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.TOKENS_BY_TAG(tag)}`, { params })
+      );
+
+      const tokens = response.data || [];
+      return normalizeTokens(tokens);
+    } catch (error) {
+      console.error(`Error fetching tokens by tag '${tag}':`, error);
+      // Return mock trending tokens for development
+      return this.getMockTrendingTokens(limit);
+    }
+  }
+
+  /**
+   * Fetch trending tokens (convenience method)
+   */
+  async fetchTrendingTokens(limit: number = 20, chainId?: string): Promise<Token[]> {
+    return this.fetchTokensByTag('trending', limit, chainId);
+  }
+
+  /**
+   * Fetch new tokens (convenience method)
+   */
+  async fetchNewTokens(limit: number = 20, chainId?: string): Promise<Token[]> {
+    return this.fetchTokensByTag('new', limit, chainId);
+  }
+
+  /**
+   * Add tag to a token
+   */
+  async addTokenTag(chainId: string, tokenAddress: string, tag: string): Promise<{ success: boolean; tags: string[] }> {
+    try {
+      const response = await firstValueFrom(
+        this.http.post<any>(
+          `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.TOKEN_TAGS(chainId, tokenAddress)}`,
+          { tag }
+        )
+      );
+      return {
+        success: response.success || false,
+        tags: response.tags || []
+      };
+    } catch (error) {
+      console.error('Error adding token tag:', error);
+      return { success: false, tags: [] };
+    }
+  }
+
+  /**
+   * Remove tag from a token
+   */
+  async removeTokenTag(chainId: string, tokenAddress: string, tag: string): Promise<{ success: boolean; tags: string[] }> {
+    try {
+      const response = await firstValueFrom(
+        this.http.delete<any>(
+          `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.TOKEN_TAG_DELETE(chainId, tokenAddress, tag)}`
+        )
+      );
+      return {
+        success: response.success || false,
+        tags: response.tags || []
+      };
+    } catch (error) {
+      console.error('Error removing token tag:', error);
+      return { success: false, tags: [] };
+    }
+  }
+
+  /**
+   * Get all tags for a token
+   */
+  async getTokenTags(chainId: string, tokenAddress: string): Promise<string[]> {
+    try {
+      const response = await firstValueFrom(
+        this.http.get<any>(
+          `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.TOKEN_TAGS(chainId, tokenAddress)}`
+        )
+      );
+      return response.data || [];
+    } catch (error) {
+      console.error('Error getting token tags:', error);
+      return [];
+    }
+  }
+
   // Mock data for development - matches API structure
   private getMockTokens(filterOptions: TokenFilterOptions): Token[] {
     // Helper to create mock token with proper tokenId format
@@ -190,6 +285,14 @@ export class TokenService {
         token.token_symbol?.toLowerCase().includes(searchLower) ||
         token.token_name?.toLowerCase().includes(searchLower)
       )
+      .slice(0, limit);
+  }
+
+  private getMockTrendingTokens(limit: number): Token[] {
+    // Return top tokens by volume for mock trending
+    const mockTokens = this.getMockTokens({});
+    return mockTokens
+      .sort((a, b) => (b.daily_volume_usd || 0) - (a.daily_volume_usd || 0))
       .slice(0, limit);
   }
 }

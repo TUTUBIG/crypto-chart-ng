@@ -1,3 +1,101 @@
+// Social Login Styles
+.social-login-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.social-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  border: 2px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: var(--color-primary);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .social-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+  }
+}
+
+.google-btn {
+  border-color: #4285F4;
+  
+  &:hover:not(:disabled) {
+    background: rgba(66, 133, 244, 0.05);
+    border-color: #4285F4;
+  }
+}
+
+.apple-btn {
+  border-color: #000;
+  
+  &:hover:not(:disabled) {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: #000;
+  }
+}
+
+.x-btn {
+  border-color: #000;
+  
+  &:hover:not(:disabled) {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: #000;
+  }
+}
+
+.telegram-btn {
+  border-color: #0088cc;
+  
+  &:hover:not(:disabled) {
+    background: rgba(0, 136, 204, 0.05);
+    border-color: #0088cc;
+  }
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 24px 0;
+
+  &::before,
+  &::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  span {
+    padding: 0 16px;
+    font-size: 14px;
+    color: var(--color-text-secondary);
+    font-weight: 500;
+  }
+}
+
 .auth-container {
   min-height: calc(100vh - 80px);
   display: flex;
@@ -56,6 +154,43 @@
   color: var(--color-text-primary);
 }
 
+.password-input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.25rem;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+
+  &:hover:not(:disabled) {
+    opacity: 1;
+  }
+
+  &:focus {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  &:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+}
+
 .form-input {
   width: 100%;
   padding: 0.75rem 1rem;
@@ -79,6 +214,10 @@
   
   &::placeholder {
     color: var(--color-text-tertiary);
+  }
+
+  .password-input-wrapper & {
+    padding-right: 3rem;
   }
 }
 

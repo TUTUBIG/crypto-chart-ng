@@ -5,20 +5,6 @@
       <p class="auth-subtitle">Register to get started</p>
     </div>
 
-    <!-- Telegram Registration Option -->
-    <div class="telegram-login-section">
-      <div class="telegram-login-header">
-        <span class="telegram-icon">📱</span>
-        <span>Quick Registration with Telegram</span>
-      </div>
-      <div id="telegram-register-container" class="telegram-widget-container"></div>
-      <p class="telegram-hint">Instant registration - no password or email needed</p>
-    </div>
-
-    <div class="divider">
-      <span>or register with email</span>
-    </div>
-
     <form class="auth-form" (ngSubmit)="register()">
       <!-- Email Input -->
       <div class="form-group">
@@ -38,32 +24,54 @@
       <!-- Password Input -->
       <div class="form-group">
         <label for="password" class="form-label">Password</label>
-        <input
-          id="password"
-          type="password"
-          class="form-input"
-          placeholder="At least 8 characters"
-          [value]="password()"
-          (input)="password.set($any($event.target).value)"
-          [disabled]="codeSent()"
-          required
-        />
+        <div class="password-input-wrapper">
+          <input
+            id="password"
+            [type]="showPassword() ? 'text' : 'password'"
+            class="form-input"
+            placeholder="At least 8 characters"
+            [value]="password()"
+            (input)="password.set($any($event.target).value)"
+            [disabled]="codeSent()"
+            required
+          />
+          <button
+            type="button"
+            class="password-toggle"
+            (click)="showPassword.set(!showPassword())"
+            [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+            [disabled]="codeSent()"
+          >
+            {{ showPassword() ? '👁️' : '👁️‍🗨️' }}
+          </button>
+        </div>
         <small class="form-hint">Must be at least 8 characters long</small>
       </div>
 
       <!-- Confirm Password Input -->
       <div class="form-group">
         <label for="confirmPassword" class="form-label">Confirm Password</label>
-        <input
-          id="confirmPassword"
-          type="password"
-          class="form-input"
-          placeholder="Re-enter your password"
-          [value]="confirmPassword()"
-          (input)="confirmPassword.set($any($event.target).value)"
-          [disabled]="codeSent()"
-          required
-        />
+        <div class="password-input-wrapper">
+          <input
+            id="confirmPassword"
+            [type]="showConfirmPassword() ? 'text' : 'password'"
+            class="form-input"
+            placeholder="Re-enter your password"
+            [value]="confirmPassword()"
+            (input)="confirmPassword.set($any($event.target).value)"
+            [disabled]="codeSent()"
+            required
+          />
+          <button
+            type="button"
+            class="password-toggle"
+            (click)="showConfirmPassword.set(!showConfirmPassword())"
+            [attr.aria-label]="showConfirmPassword() ? 'Hide password' : 'Show password'"
+            [disabled]="codeSent()"
+          >
+            {{ showConfirmPassword() ? '👁️' : '👁️‍🗨️' }}
+          </button>
+        </div>
       </div>
 
       <!-- Send Code Button -->

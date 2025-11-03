@@ -28,6 +28,8 @@ export class RegisterComponent implements OnInit, OnDestroy {
   successMessage = signal<string | null>(null);
   codeSent = signal(false);
   countdown = signal(0);
+  showPassword = signal(false);
+  showConfirmPassword = signal(false);
   
   readonly TELEGRAM_BOT_USERNAME = 'fipulse_bot';
 
@@ -37,60 +39,85 @@ export class RegisterComponent implements OnInit, OnDestroy {
   ) {}
   
   ngOnInit(): void {
-    // Load Telegram Widget script
-    this.loadTelegramWidget();
-    
-    // Set up global callback for Telegram auth
-    window.onTelegramAuthRegister = (user: any) => {
-      this.handleTelegramAuth(user);
-    };
+    // OAuth callbacks are handled by the backend redirect
   }
   
   ngOnDestroy(): void {
-    // Clean up global callback
-    delete window.onTelegramAuthRegister;
+    // Cleanup if needed
   }
-  
-  private loadTelegramWidget(): void {
-    const script = document.createElement('script');
-    script.src = 'https://telegram.org/js/telegram-widget.js?22';
-    script.async = true;
-    script.setAttribute('data-telegram-login', this.TELEGRAM_BOT_USERNAME);
-    script.setAttribute('data-size', 'large');
-    script.setAttribute('data-radius', '8');
-    script.setAttribute('data-onauth', 'onTelegramAuthRegister(user)');
-    script.setAttribute('data-request-access', 'write');
+
+  async registerWithGoogle() {
+    this.isLoading.set(true);
+    this.error.set(null);
     
-    const container = document.getElementById('telegram-register-container');
-    if (container) {
-      container.appendChild(script);
+    try {
+      const result = await this.authService.loginWithOAuth('google');
+      if (result.authUrl) {
+        window.location.href = result.authUrl;
+      } else {
+        this.error.set('Failed to initiate Google registration');
+        this.isLoading.set(false);
+      }
+    } catch (error) {
+      console.error('Error during Google registration:', error);
+      this.error.set('Failed to initiate Google registration');
+      this.isLoading.set(false);
     }
   }
-  
-  private async handleTelegramAuth(telegramUser: any): Promise<void> {
+
+  async registerWithApple() {
+    this.isLoading.set(true);
+    this.error.set(null);
+    
     try {
-      this.isLoading.set(true);
-      this.error.set(null);
-      
-      console.log('Telegram registration data:', telegramUser);
-      
-      // Use AuthService to handle Telegram login/register
-      const result = await this.authService.loginWithTelegram(telegramUser);
-      
-      if (result.success) {
-        this.successMessage.set('Registration successful via Telegram!');
-        
-        setTimeout(() => {
-          this.router.navigate(['/dashboard']);
-        }, 500);
+      const result = await this.authService.loginWithOAuth('apple');
+      if (result.authUrl) {
+        window.location.href = result.authUrl;
       } else {
-        this.error.set(result.error || 'Telegram registration failed');
+        this.error.set('Failed to initiate Apple registration');
+        this.isLoading.set(false);
       }
-      
+    } catch (error) {
+      console.error('Error during Apple registration:', error);
+      this.error.set('Failed to initiate Apple registration');
+      this.isLoading.set(false);
+    }
+  }
+
+  async registerWithX() {
+    this.isLoading.set(true);
+    this.error.set(null);
+    
+    try {
+      const result = await this.authService.loginWithOAuth('x');
+      if (result.authUrl) {
+        window.location.href = result.authUrl;
+      } else {
+        this.error.set('Failed to initiate X registration');
+        this.isLoading.set(false);
+      }
+    } catch (error) {
+      console.error('Error during X registration:', error);
+      this.error.set('Failed to initiate X registration');
+      this.isLoading.set(false);
+    }
+  }
+
+  async registerWithTelegram() {
+    this.isLoading.set(true);
+    this.error.set(null);
+    
+    try {
+      const result = await this.authService.loginWithOAuth('telegram');
+      if (result.authUrl) {
+        window.location.href = result.authUrl;
+      } else {
+        this.error.set('Failed to initiate Telegram registration');
+        this.isLoading.set(false);
+      }
     } catch (error) {
       console.error('Error during Telegram registration:', error);
-      this.error.set('Network error during Telegram registration');
-    } finally {
+      this.error.set('Failed to initiate Telegram registration');
       this.isLoading.set(false);
     }
   }

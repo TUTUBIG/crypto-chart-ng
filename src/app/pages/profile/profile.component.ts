@@ -2,7 +2,9 @@ import { Component, signal, computed, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../services/auth.service';
+import { WebSocketService } from '../../../services/websocket.service';
 import { API_CONFIG } from '../../../config/api.config';
+import { Subscription } from 'rxjs';
 
 declare global {
   interface Window {
@@ -32,31 +34,45 @@ export class ProfileComponent implements OnInit, OnDestroy {
   // Telegram bot info
   readonly TELEGRAM_BOT_USERNAME = 'fipulse_bot'; // Replace with actual bot username
   
-  constructor(private authService: AuthService) {}
-  
+  // WebSocket subscription
+  private botStartedSubscription?: Subscription;
+
+  constructor(
+    private authService: AuthService,
+    private wsService: WebSocketService
+  ) {}
+
   ngOnInit(): void {
     this.loadNotificationPreferences();
-    
+
     // Load Telegram Widget if not connected
     if (!this.isTelegramConnected) {
       setTimeout(() => this.loadTelegramWidget(), 100);
     }
-    
+
     // Set up global callback for Telegram binding
     window.onTelegramAuthProfile = (user: any) => {
       this.handleTelegramBinding(user);
     };
+    
+    // Subscribe to bot_started WebSocket events
+    this.subscribeToBotStartedEvents();
   }
-  
+
   ngOnDestroy(): void {
     // Clean up global callback
     delete window.onTelegramAuthProfile;
+    
+    // Unsubscribe from WebSocket events
+    if (this.botStartedSubscription) {
+      this.botStartedSubscription.unsubscribe();
+    }
   }
-  
+
   get isTelegramConnected(): boolean {
     return !!(this.currentUser()?.telegram_id && this.currentUser()?.telegram_username);
   }
-  
+
   /**
    * Get Telegram bot deep link with user ID for automatic account binding
    * Format: https://t.me/bot_username?start=userid_{user_id}
@@ -65,7 +81,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     const userId = this.currentUser()?.id;
     if (userId) {
       // Encode user ID in the start parameter so bot can auto-link the account
-      return `https://t.me/${this.TELEGRAM_BOT_USERNAME}?start=userid_${userId}`;
+      return `https://t.me/${this.TELEGRAM_BOT_USERNAME}?start=${userId}`;
     }
     return `https://t.me/${this.TELEGRAM_BOT_USERNAME}`;
   }
@@ -121,7 +137,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
     script.setAttribute('data-radius', '8');
     script.setAttribute('data-onauth', 'onTelegramAuthProfile(user)');
     script.setAttribute('data-request-access', 'write');
-    
+
     const container = document.getElementById('telegram-bind-container');
     if (container) {
       // Clear existing content
@@ -129,14 +145,14 @@ export class ProfileComponent implements OnInit, OnDestroy {
       container.appendChild(script);
     }
   }
-  
+
   private async handleTelegramBinding(telegramUser: any): Promise<void> {
     try {
       console.log('Binding Telegram account:', telegramUser);
-      
+
       // Use AuthService to bind Telegram account
       const result = await this.authService.bindTelegram(telegramUser);
-      
+
       if (result.success) {
         alert('✅ Telegram account linked successfully!');
         // Refresh user profile to get updated info
@@ -144,7 +160,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
       } else {
         alert('Failed to bind Telegram: ' + (result.error || 'Unknown error'));
       }
-      
+
     } catch (error) {
       console.error('Error binding Telegram:', error);
       alert('Error binding Telegram account');
@@ -153,6 +169,20 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   toggleTelegramGuide(): void {
     this.showTelegramGuide.update(v => !v);
+  }
+
+  async connectTelegram(): Promise<void> {
+    try {
+      const result = await this.authService.loginWithOAuth('telegram');
+      if (result.authUrl) {
+        window.location.href = result.authUrl;
+      } else {
+        alert('Failed to initiate Telegram connection. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error connecting Telegram:', error);
+      alert('Failed to connect Telegram. Please try again.');
+    }
   }
 
   async unlinkTelegram(): Promise<void> {
@@ -184,6 +214,52 @@ export class ProfileComponent implements OnInit, OnDestroy {
   copyToClipboard(text: string): void {
     navigator.clipboard.writeText(text).then(() => {
       alert('Copied to clipboard!');
+    });
+  }
+
+  formatBotStartedDate(dateString?: string): string {
+    if (!dateString) return '';
+
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (diffInSeconds < 60) {
+      return 'just now';
+    } else if (diffInSeconds < 3600) {
+      const minutes = Math.floor(diffInSeconds / 60);
+      return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+    } else if (diffInSeconds < 86400) {
+      const hours = Math.floor(diffInSeconds / 3600);
+      return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    } else if (diffInSeconds < 604800) {
+      const days = Math.floor(diffInSeconds / 86400);
+      return `${days} day${days > 1 ? 's' : ''} ago`;
+    } else {
+      return date.toLocaleDateString();
+    }
+  }
+
+  /**
+   * Subscribe to bot_started WebSocket events
+   * Listens for real-time updates when user starts the bot
+   */
+  private subscribeToBotStartedEvents(): void {
+    console.log('[Profile] Subscribing to bot_started WebSocket events...');
+    
+    this.botStartedSubscription = this.wsService.onBotStarted$().subscribe(async (event) => {
+      console.log('[Profile] Bot started event received:', event);
+      
+      // Check if this event is for the current user
+      if (event.user_id === this.currentUser()?.id) {
+        console.log('[Profile] Bot started for current user! Refreshing user data...');
+        
+        // Refresh user data to get updated bot_started status
+        await this.authService.refreshCurrentUser();
+        
+        // Show success message (optional)
+        console.log('[Profile] ✅ Bot is now connected and ready!');
+      }
     });
   }
 }

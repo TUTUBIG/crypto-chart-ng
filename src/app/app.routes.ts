@@ -14,6 +14,10 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/register/register.component').then(m => m.RegisterComponent)
   },
   {
+    path: 'forgot-password',
+    loadComponent: () => import('./pages/forgot-password/forgot-password.component').then(m => m.ForgotPasswordComponent)
+  },
+  {
     path: 'market',
     loadComponent: () => import('./pages/market/market.component').then(m => m.MarketComponent)
   },

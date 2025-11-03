@@ -10,7 +10,7 @@
 
   <div class="container">
     <div class="profile-content">
-      
+
       <!-- Profile Info -->
       <section class="section">
         <h2 class="section-title">Account Information</h2>
@@ -32,117 +32,168 @@
 
       <!-- Telegram Integration -->
       <section class="section">
-        <h2 class="section-title">📱 Telegram Integration</h2>
-        <div class="telegram-card">
-          @if (isTelegramConnected) {
-            <!-- Connected State -->
-            <div class="telegram-connected">
-              <div class="connection-status">
-                <div class="status-icon success">✓</div>
-                <div class="status-info">
-                  <div class="status-title">Telegram Connected</div>
-                  <div class="status-description">
-                    Connected as <strong>@{{ currentUser()?.telegram_username }}</strong>
-                  </div>
+        <h2 class="section-title">Telegram Integration</h2>
+        
+        @if (isTelegramConnected) {
+          <!-- Connected State -->
+          <div class="telegram-card connected">
+            <div class="telegram-status-section">
+              <div class="status-badge success">
+                <svg class="status-icon" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                </svg>
+                <span>Connected</span>
+              </div>
+              <div class="telegram-info">
+                <div class="telegram-avatar">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/>
+                  </svg>
+                </div>
+                <div class="telegram-details">
+                  <div class="telegram-username">@{{ currentUser()?.telegram_username }}</div>
+                  <div class="telegram-label">Receiving notifications</div>
                 </div>
               </div>
-              <button 
-                class="btn btn-danger-outline" 
-                (click)="unlinkTelegram()"
-                [disabled]="isUnlinkingTelegram()">
-                {{ isUnlinkingTelegram() ? 'Unlinking...' : 'Unlink Account' }}
-              </button>
             </div>
-          } @else {
-            <!-- Not Connected State -->
-            <div class="telegram-not-connected">
-              <div class="connection-status">
-                <div class="status-icon pending">⚠️</div>
-                <div class="status-info">
-                  <div class="status-title">Telegram Not Connected</div>
-                  <div class="status-description">
-                    Bind your Telegram account to receive instant price alerts
+            <button
+              class="btn-unlink"
+              (click)="unlinkTelegram()"
+              [disabled]="isUnlinkingTelegram()">
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/>
+              </svg>
+              {{ isUnlinkingTelegram() ? 'Unlinking...' : 'Unlink' }}
+            </button>
+          </div>
+        } @else {
+          <!-- Not Connected State -->
+          <div class="telegram-card">
+            <div class="telegram-status-section">
+              <div class="status-badge warning">
+                <svg class="status-icon" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                </svg>
+                <span>Not Connected</span>
+              </div>
+              <p class="connection-description">
+                Connect your Telegram account to receive instant price alerts and watchlist notifications
+              </p>
+            </div>
+
+            <div class="telegram-connect-section">
+              <div class="connect-steps">
+                <div class="connect-step" [class.completed]="currentUser()?.bot_started">
+                  <span class="step-badge" [class.completed]="currentUser()?.bot_started">
+                    @if (currentUser()?.bot_started) {
+                      <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                      </svg>
+                    } @else {
+                      1
+                    }
+                  </span>
+                  <div class="step-text">
+                    <strong>Start the bot</strong> 
+                    @if (currentUser()?.bot_started) {
+                      <span class="step-status-text">✓ Completed</span>
+                    } @else {
+                      to enable message delivery
+                    }
+                  </div>
+                </div>
+                <div class="connect-step" [class.active]="currentUser()?.bot_started">
+                  <span class="step-badge" [class.active]="currentUser()?.bot_started">2</span>
+                  <div class="step-text">
+                    <strong>Connect your account</strong> 
+                    @if (currentUser()?.bot_started) {
+                      <span class="step-emphasis">← Next step</span>
+                    } @else {
+                      using OAuth
+                    }
+                  </div>
+                </div>
+                <div class="connect-step">
+                  <span class="step-badge">3</span>
+                  <div class="step-text">
+                    <strong>Enable notifications</strong> in settings below
                   </div>
                 </div>
               </div>
-              
-              <!-- Telegram Login Widget for Binding -->
-              <div class="telegram-bind-section">
-                <p class="bind-instruction">Click the button below to bind your Telegram account:</p>
-                <div id="telegram-bind-container" class="telegram-widget-container"></div>
-              </div>
-              
-              <div class="telegram-actions">
-                <button class="btn btn-secondary" (click)="toggleTelegramGuide()">
-                  <span class="btn-icon">📖</span>
+
+              @if (currentUser()?.bot_started) {
+                <div class="bot-status-info success">
+                  <svg class="status-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                  </svg>
+                  <div>
+                    <strong>Bot is ready!</strong>
+                    <span class="status-subtext">You started the bot {{ formatBotStartedDate(currentUser()?.bot_started_at) }}</span>
+                  </div>
+                </div>
+              } @else {
+                <div class="bot-status-info warning">
+                  <svg class="status-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                  </svg>
+                  <div>
+                    <strong>Start the bot first</strong>
+                    <span class="status-subtext">Click the button below to start the bot on Telegram</span>
+                  </div>
+                </div>
+              }
+
+              <div class="connect-actions">
+                @if (!currentUser()?.bot_started) {
+                  <a [href]="telegramBotLink" target="_blank" class="btn-start-bot btn-primary-action">
+                    <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/>
+                    </svg>
+                    Start @{{ TELEGRAM_BOT_USERNAME }}
+                  </a>
+                }
+                <button 
+                  class="btn-connect" 
+                  [class.btn-primary-action]="currentUser()?.bot_started"
+                  (click)="connectTelegram()"
+                  [disabled]="!currentUser()?.bot_started">
+                  <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+                  </svg>
+                  Connect Telegram
+                </button>
+                <button class="btn-info-toggle" (click)="toggleTelegramGuide()">
+                  <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                  </svg>
                   How it Works
                 </button>
               </div>
             </div>
 
-            <!-- Connection Guide -->
             @if (showTelegramGuide()) {
-              <div class="telegram-guide">
-                <div class="guide-header">
-                  <h3>📱 How Telegram Binding Works</h3>
-                  <button class="close-btn" (click)="toggleTelegramGuide()">✕</button>
+              <div class="info-panel">
+                <button class="close-btn" (click)="toggleTelegramGuide()">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/>
+                  </svg>
+                </button>
+                <div class="info-header">
+                  <svg class="info-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+                  </svg>
+                  <h4>How It Works</h4>
                 </div>
-                
-                <div class="guide-intro">
-                  <p><strong>📧 Already logged in with email?</strong> Perfect! Now bind your Telegram account using the official Telegram Login Widget.</p>
-                </div>
-
-                <div class="guide-steps">
-                  <div class="step">
-                    <div class="step-number">1</div>
-                    <div class="step-content">
-                      <h4>✅ You're Logged In</h4>
-                      <p>You're currently logged in with: <strong>{{ currentUser()?.email }}</strong></p>
-                      <p class="step-note">User ID: <code>{{ currentUser()?.id }}</code></p>
-                    </div>
-                  </div>
-                  <div class="step">
-                    <div class="step-number">2</div>
-                    <div class="step-content">
-                      <h4>Click the Telegram Button</h4>
-                      <p>Click the <strong>"Login with Telegram"</strong> button above. A popup will open asking you to authorize with Telegram.</p>
-                    </div>
-                  </div>
-                  <div class="step">
-                    <div class="step-number">3</div>
-                    <div class="step-content">
-                      <h4>Authorize in Telegram</h4>
-                      <p>Telegram will ask you to confirm. Click <strong>"Accept"</strong> or <strong>"Confirm"</strong> to bind your account.</p>
-                      <p class="step-note">💡 This uses Telegram's official OAuth, so it's 100% secure!</p>
-                    </div>
-                  </div>
-                  <div class="step">
-                    <div class="step-number">4</div>
-                    <div class="step-content">
-                      <h4>Automatic Binding</h4>
-                      <p>Your Telegram account will be automatically bound to your FiPulse account. The page will reload and show your Telegram username.</p>
-                    </div>
-                  </div>
-                  <div class="step">
-                    <div class="step-number">5</div>
-                    <div class="step-content">
-                      <h4>Enable Notifications 🔔</h4>
-                      <p>After binding, scroll down to <strong>"Notification Preferences"</strong> and toggle <strong>ON</strong> "Telegram Notifications" to start receiving alerts!</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="guide-note">
-                  <strong>🔐 Security:</strong> This uses Telegram's official Login Widget with OAuth authentication - no passwords or manual bot commands needed!
-                </div>
-                
-                <div class="guide-note" style="margin-top: 12px;">
-                  <strong>📬 What You'll Receive:</strong> Price alerts, watchlist updates, and custom interval notifications (1m, 5m, 15m, 1h) sent directly to your Telegram!
-                </div>
+                <ul class="info-list">
+                  <li>Uses Telegram's official OAuth for secure authentication</li>
+                  <li>No manual bot commands or tokens required</li>
+                  <li>Instant notifications for price alerts and watchlist updates</li>
+                  <li>Customizable alert intervals (1m, 5m, 15m, 1h)</li>
+                </ul>
               </div>
             }
-          }
-        </div>
+          </div>
+        }
       </section>
 
 
@@ -156,8 +207,8 @@
               <div class="preference-description">Receive price alerts and watchlist updates via email</div>
             </div>
             <label class="toggle">
-              <input 
-                type="checkbox" 
+              <input
+                type="checkbox"
                 [checked]="emailNotifications()"
                 (change)="updateNotificationPreference('email', $any($event.target).checked)">
               <span class="toggle-slider"></span>
@@ -175,8 +226,8 @@
               </div>
             </div>
             <label class="toggle" [class.disabled]="!isTelegramConnected">
-              <input 
-                type="checkbox" 
+              <input
+                type="checkbox"
                 [checked]="telegramNotifications()"
                 [disabled]="!isTelegramConnected"
                 (change)="updateNotificationPreference('telegram', $any($event.target).checked)">
