@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+Allow: /market
+Allow: /watch
+Allow: /developer
+
+# Disallow authentication pages that don't need indexing
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /dashboard
+Disallow: /me
+
+# Sitemap location
+Sitemap: https://fipulse.tech/sitemap.xml
+
