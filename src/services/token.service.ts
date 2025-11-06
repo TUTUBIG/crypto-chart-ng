@@ -86,23 +86,21 @@ export class TokenService {
    * Fetch tokens by tag (e.g., 'trending', 'new', 'popular')
    */
   async fetchTokensByTag(tag: string, limit: number = 20, chainId?: string): Promise<Token[]> {
-    try {
-      let params = new HttpParams().set('limit', limit.toString());
-      if (chainId) {
-        params = params.set('chainId', chainId);
-      }
-
-      const response = await firstValueFrom(
-        this.http.get<any>(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.TOKENS_BY_TAG(tag)}`, { params })
-      );
-
-      const tokens = response.data || [];
-      return normalizeTokens(tokens);
-    } catch (error) {
-      console.error(`Error fetching tokens by tag '${tag}':`, error);
-      // Return mock trending tokens for development
-      return this.getMockTrendingTokens(limit);
+    let params = new HttpParams().set('limit', limit.toString());
+    if (chainId) {
+      params = params.set('chainId', chainId);
     }
+
+    const url = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.TOKENS_BY_TAG(tag)}`;
+    console.log(`[TokenService] Fetching tokens by tag '${tag}':`, url, params.toString());
+    
+    const response = await firstValueFrom(
+      this.http.get<any>(url, { params })
+    );
+
+    console.log(`[TokenService] Successfully fetched tokens by tag '${tag}':`, response);
+    const tokens = response.data || [];
+    return normalizeTokens(tokens);
   }
 
   /**
@@ -117,6 +115,30 @@ export class TokenService {
    */
   async fetchNewTokens(limit: number = 20, chainId?: string): Promise<Token[]> {
     return this.fetchTokensByTag('new', limit, chainId);
+  }
+
+  /**
+   * Fetch hot tokens (high transaction count and volume)
+   * Performance-optimized: uses KV storage
+   */
+  async fetchHotTokens(limit: number = 5, chainId?: string): Promise<Token[]> {
+    return this.fetchTokensByTag('hot', limit, chainId);
+  }
+
+  /**
+   * Fetch pumping tokens (price increase > 20%)
+   * Performance-optimized: uses KV storage
+   */
+  async fetchPumpingTokens(limit: number = 5, chainId?: string): Promise<Token[]> {
+    return this.fetchTokensByTag('pumping', limit, chainId);
+  }
+
+  /**
+   * Fetch rising tokens (price increase 5-20%)
+   * Performance-optimized: uses KV storage
+   */
+  async fetchRisingTokens(limit: number = 5, chainId?: string): Promise<Token[]> {
+    return this.fetchTokensByTag('rising', limit, chainId);
   }
 
   /**

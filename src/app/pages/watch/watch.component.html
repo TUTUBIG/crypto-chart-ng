@@ -19,43 +19,71 @@
       </div>
 
       <div class="carousel-track-container">
-        <div class="carousel-track" [style.transform]="'translateX(-' + (currentSlide() * 100) + '%)'">
-          @for (token of popularTokens(); track token.id; let i = $index) {
-            <div class="carousel-slide">
-              <div class="popular-token-card">
-                <div class="token-info">
-                  <div class="token-header">
-                    <span class="token-symbol">{{ token.symbol }}</span>
-                    <span class="trending-badge">{{ token.trending }}</span>
+        @if (isLoadingTrending()) {
+          <div class="carousel-track">
+            @for (item of [1,2,3]; track item) {
+              <div class="carousel-slide">
+                <div class="popular-token-card skeleton-card">
+                  <div class="token-info">
+                    <div class="token-header">
+                      <div class="skeleton skeleton-text skeleton-symbol"></div>
+                      <div class="skeleton skeleton-badge"></div>
+                    </div>
+                    <div class="skeleton skeleton-text skeleton-name"></div>
+                    <div class="skeleton skeleton-text skeleton-price"></div>
+                    <div class="skeleton skeleton-text skeleton-change"></div>
+                    <div class="skeleton skeleton-text skeleton-volume"></div>
                   </div>
-                  <div class="token-name">{{ token.name }}</div>
-                  <div class="token-price">\${{ token.price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 6}) }}</div>
-                  <div class="token-change" [class.positive]="token.change24h > 0" [class.negative]="token.change24h < 0">
-                    {{ token.change24h > 0 ? '▲' : '▼' }} {{ Math.abs(token.change24h).toFixed(2) }}%
-                  </div>
-                  <div class="token-volume">Vol: \${{ (token.volume24h / 1e6).toFixed(2) }}M</div>
+                  <div class="skeleton skeleton-button"></div>
                 </div>
-                <button class="add-to-watch-btn" (click)="addToWatchlist(token)">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path d="M12 5v14M5 12h14" stroke-width="2" stroke-linecap="round"/>
-                  </svg>
-                  Add to Watch
-                </button>
               </div>
-            </div>
-          }
-        </div>
-      </div>
-
-      <div class="carousel-indicators">
-        @for (slide of [0, 1]; track slide; let i = $index) {
-          <button
-            class="indicator"
-            [class.active]="currentSlide() === i"
-            (click)="currentSlide.set(i)">
-          </button>
+            }
+          </div>
+        } @else if (popularTokens().length === 0) {
+          <div class="trending-empty">
+            <p>No trending tokens available at the moment.</p>
+          </div>
+        } @else {
+          <div class="carousel-track" [style.transform]="'translateX(-' + (currentSlide() * 100) + '%)'">
+            @for (token of popularTokens(); track token.id; let i = $index) {
+              <div class="carousel-slide">
+                <div class="popular-token-card">
+                  <div class="token-info">
+                    <div class="token-header">
+                      <span class="token-symbol">{{ token.symbol }}</span>
+                      <span class="trending-badge">{{ token.trending }}</span>
+                    </div>
+                    <div class="token-name">{{ token.name }}</div>
+                    <div class="token-price">\${{ token.price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 6}) }}</div>
+                    <div class="token-change" [class.positive]="token.change24h > 0" [class.negative]="token.change24h < 0">
+                      {{ token.change24h > 0 ? '▲' : '▼' }} {{ Math.abs(token.change24h).toFixed(2) }}%
+                    </div>
+                    <div class="token-volume">Vol: \${{ (token.volume24h / 1e6).toFixed(2) }}M</div>
+                  </div>
+                  <button class="add-to-watch-btn" (click)="addToWatchlist(token)">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                      <path d="M12 5v14M5 12h14" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    Add to Watch
+                  </button>
+                </div>
+              </div>
+            }
+          </div>
         }
       </div>
+
+      @if (!isLoadingTrending() && popularTokens().length > 0) {
+        <div class="carousel-indicators">
+          @for (slide of getCarouselSlides(); track slide; let i = $index) {
+            <button
+              class="indicator"
+              [class.active]="currentSlide() === i"
+              (click)="currentSlide.set(i)">
+            </button>
+          }
+        </div>
+      }
     </div>
   </section>
 

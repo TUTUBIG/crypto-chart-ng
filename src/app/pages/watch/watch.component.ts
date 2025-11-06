@@ -1,9 +1,11 @@
-import { Component, signal, OnDestroy, computed } from '@angular/core';
+import { Component, signal, OnDestroy, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CryptoChartComponent } from '../../components/crypto-chart/crypto-chart.component';
 import { WatchlistService, WatchlistToken, AlertSettings } from '../../../services/watchlist.service';
+import { TokenService } from '../../../services/token.service';
+import { Token } from '../../../types/token';
 
 interface PopularToken {
   id: string;
@@ -24,21 +26,15 @@ interface PopularToken {
   templateUrl: './watch.component.html',
   styleUrls: ['./watch.component.scss']
 })
-export class WatchComponent implements OnDestroy {
+export class WatchComponent implements OnInit, OnDestroy {
   // Expose Math for template
   Math = Math;
 
   // Use the watchlist service
   watchlist = computed(() => this.watchlistService.watchlist());
 
-  popularTokens = signal<PopularToken[]>([
-    { id: '1', symbol: 'SOL', name: 'Solana', price: 152.34, change24h: 5.67, volume24h: 2456789123, trending: '🔥 Hot', chainId: '1399811149', tokenAddress: 'So11111111111111111111111111111111111111112' },
-    { id: '2', symbol: 'BTC', name: 'Bitcoin', price: 43250.50, change24h: 2.34, volume24h: 28567891234, trending: '📈 Rising', chainId: '1', tokenAddress: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599' },
-    { id: '3', symbol: 'ETH', name: 'Ethereum', price: 2280.75, change24h: 3.21, volume24h: 15678912345, trending: '⚡ Volatile', chainId: '1', tokenAddress: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2' },
-    { id: '4', symbol: 'BONK', name: 'Bonk', price: 0.000012, change24h: 12.45, volume24h: 456789123, trending: '🚀 Pumping', chainId: '1399811149', tokenAddress: 'DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263' },
-    { id: '5', symbol: 'WIF', name: 'Dogwifhat', price: 2.34, change24h: 8.90, volume24h: 234567891, trending: '🔥 Hot', chainId: '1399811149', tokenAddress: 'EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm' }
-  ]);
-
+  popularTokens = signal<PopularToken[]>([]);
+  isLoadingTrending = signal(true);
   currentSlide = signal(0);
   showSettingsDialog = signal(false);
   showChartModal = signal(false);
@@ -55,9 +51,15 @@ export class WatchComponent implements OnDestroy {
     notes: '' as string
   };
 
-  constructor(private watchlistService: WatchlistService) {}
+  constructor(
+    private watchlistService: WatchlistService,
+    private tokenService: TokenService
+  ) {}
 
-  ngOnInit() {
+  async ngOnInit() {
+    // Load trending tokens from API
+    await this.loadTrendingTokens();
+
     // Auto-rotate carousel
     setInterval(() => {
       this.nextSlide();
@@ -65,6 +67,72 @@ export class WatchComponent implements OnDestroy {
 
     // Add ESC key listener for closing modals
     document.addEventListener('keydown', this.handleEscKey.bind(this));
+  }
+
+  async loadTrendingTokens() {
+    this.isLoadingTrending.set(true);
+    try {
+      // Fetch hot, pumping, and rising tokens from API
+      const [hotTokens, pumpingTokens, risingTokens] = await Promise.all([
+        this.tokenService.fetchHotTokens(5).catch(err => {
+          console.error('[WatchComponent] Error fetching hot tokens:', err);
+          return [];
+        }),
+        this.tokenService.fetchPumpingTokens(5).catch(err => {
+          console.error('[WatchComponent] Error fetching pumping tokens:', err);
+          return [];
+        }),
+        this.tokenService.fetchRisingTokens(5).catch(err => {
+          console.error('[WatchComponent] Error fetching rising tokens:', err);
+          return [];
+        })
+      ]);
+
+      // Combine all tokens and remove duplicates
+      const allTokens = [...hotTokens, ...pumpingTokens, ...risingTokens];
+      const uniqueTokens = Array.from(
+        new Map(allTokens.map(token => {
+          const tokenId = (token as any).token_id || `${token.chain_id}-${token.token_address}`.toLowerCase();
+          return [tokenId, token];
+        })).values()
+      );
+
+      // Convert Token[] to PopularToken[] format
+      const popularTokens: PopularToken[] = uniqueTokens.slice(0, 15).map((token, index) => {
+        // Determine trending badge based on which list it came from
+        let trending = '🔥 Hot';
+        if (pumpingTokens.some(t => 
+          ((t as any).token_id || `${t.chain_id}-${t.token_address}`.toLowerCase()) === 
+          ((token as any).token_id || `${token.chain_id}-${token.token_address}`.toLowerCase())
+        )) {
+          trending = '🚀 Pumping';
+        } else if (risingTokens.some(t => 
+          ((t as any).token_id || `${t.chain_id}-${t.token_address}`.toLowerCase()) === 
+          ((token as any).token_id || `${token.chain_id}-${token.token_address}`.toLowerCase())
+        )) {
+          trending = '📈 Rising';
+        }
+
+        return {
+          id: (token as any).token_id || `${token.chain_id}-${token.token_address}`.toLowerCase(),
+          symbol: token.token_symbol || token.symbol || 'N/A',
+          name: token.token_name || token.name || 'Unknown Token',
+          price: token.price || 0,
+          change24h: token.change24h || (token as any).price_change_rate || 0,
+          volume24h: token.daily_volume_usd || token.volume24h || 0,
+          trending,
+          chainId: token.chain_id || '',
+          tokenAddress: token.token_address || ''
+        };
+      });
+
+      this.popularTokens.set(popularTokens);
+    } catch (error) {
+      console.error('[WatchComponent] Error loading trending tokens:', error);
+      this.popularTokens.set([]);
+    } finally {
+      this.isLoadingTrending.set(false);
+    }
   }
 
   ngOnDestroy() {
@@ -84,12 +152,19 @@ export class WatchComponent implements OnDestroy {
     }
   }
 
+  getCarouselSlides(): number[] {
+    const maxSlides = Math.ceil(this.popularTokens().length / 3);
+    return Array.from({ length: maxSlides }, (_, i) => i);
+  }
+
   nextSlide() {
+    if (this.popularTokens().length === 0) return;
     const maxSlide = Math.ceil(this.popularTokens().length / 3) - 1;
     this.currentSlide.update(v => (v >= maxSlide ? 0 : v + 1));
   }
 
   prevSlide() {
+    if (this.popularTokens().length === 0) return;
     const maxSlide = Math.ceil(this.popularTokens().length / 3) - 1;
     this.currentSlide.update(v => (v <= 0 ? maxSlide : v - 1));
   }
