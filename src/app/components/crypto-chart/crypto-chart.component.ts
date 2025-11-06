@@ -465,6 +465,7 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
           LowPrice: Math.min(latestCandle.LowPrice, trade.Price),
           VolumeIn: latestCandle.VolumeIn + trade.USD,
           VolumeOut: latestCandle.VolumeOut + trade.Amount,
+          TransactionCount: (latestCandle.TransactionCount || 0) + 1, // Increment transaction count
         };
 
         // Update the candle in the chart data

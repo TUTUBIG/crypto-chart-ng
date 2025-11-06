@@ -13,6 +13,7 @@ import { Candle, RealTimeTrade } from '../sdk/types';
  *   - 8 bytes: LowPrice (little-endian float64)
  *   - 8 bytes: VolumeIn (little-endian float64)
  *   - 8 bytes: VolumeOut (little-endian float64)
+ *   - 8 bytes: TransactionCount (little-endian int64)
  */
 export function deserializeCandleData(data: ArrayBufferLike): Candle[] {
   const view = new DataView(data);
@@ -59,6 +60,10 @@ export function deserializeCandleData(data: ArrayBufferLike): Candle[] {
     const volume = view.getFloat64(offset, true);
     offset += 8;
 
+    // Read TransactionCount (8 bytes, little-endian int64)
+    const transactionCount = view.getBigInt64(offset, true);
+    offset += 8;
+
     candles.push({
       Timestamp: Number(timestamp), // Convert BigInt to number
       OpenPrice: openPrice,
@@ -67,6 +72,7 @@ export function deserializeCandleData(data: ArrayBufferLike): Candle[] {
       LowPrice: lowPrice,
       VolumeIn: volumeUSD,
       VolumeOut: volume,
+      TransactionCount: Number(transactionCount), // Convert BigInt to number
     });
   }
 
@@ -196,6 +202,10 @@ export function createMockBinaryData(candles: Candle[]): ArrayBuffer {
 
     // Write VolumeOut (8 bytes, little-endian float64)
     view.setFloat64(offset, candle.VolumeOut, true);
+    offset += 8;
+
+    // Write TransactionCount (8 bytes, little-endian int64)
+    view.setBigInt64(offset, BigInt(candle.TransactionCount || 0), true);
     offset += 8;
   }
 

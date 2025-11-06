@@ -348,6 +348,7 @@ export class CryptoChartSDK {
         LowPrice: Math.min(latestCandle.LowPrice, trade.Price), // Update low if trade price is lower
         VolumeIn: latestCandle.VolumeIn + trade.USD, // Add to volume in
         VolumeOut: latestCandle.VolumeOut + trade.Amount, // Add to volume out
+        TransactionCount: (latestCandle.TransactionCount || 0) + 1, // Increment transaction count
       };
 
       console.log('✅ [SDK] Updated latest candle with trade:', {
@@ -379,6 +380,7 @@ export class CryptoChartSDK {
         ClosePrice: trade.Price,
         VolumeIn: trade.USD,
         VolumeOut: trade.Amount,
+        TransactionCount: 1, // First transaction in this candle
       };
 
       // Add the new candle

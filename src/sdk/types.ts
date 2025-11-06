@@ -9,6 +9,7 @@ export interface Candle {
   VolumeIn: number;
   VolumeOut: number;
   Timestamp: number; // seconds
+  TransactionCount: number;
 }
 
 export interface RealTimeTrade {
