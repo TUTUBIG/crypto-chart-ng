@@ -121,19 +121,19 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
 
       if (response.ok) {
         const data = await response.json();
-        this.emailNotifications.set(data.email_enabled ?? true);
+        this.emailNotifications.set(data.email_enabled ?? false);
         this.telegramNotifications.set(data.telegram_enabled ?? false);
         this.preferencesLoaded.set(true);
       } else if (response.status === 404) {
-        // Endpoint not available yet, use default values
+        // Endpoint not available yet, use default values (disabled)
         console.log('[Profile] Notification preferences endpoint not available, using defaults');
-        this.emailNotifications.set(true);
+        this.emailNotifications.set(false);
         this.telegramNotifications.set(false);
         this.preferencesLoaded.set(true);
       } else {
         console.error('[Profile] Failed to load notification preferences:', response.status, response.statusText);
-        // Set defaults on error
-        this.emailNotifications.set(true);
+        // Set defaults on error (disabled)
+        this.emailNotifications.set(false);
         this.telegramNotifications.set(false);
         this.preferencesLoaded.set(true);
       }
@@ -144,8 +144,8 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
       } else {
         console.error('[Profile] Error loading notification preferences:', error);
       }
-      // Set defaults on error
-      this.emailNotifications.set(true);
+      // Set defaults on error (disabled)
+      this.emailNotifications.set(false);
       this.telegramNotifications.set(false);
       this.preferencesLoaded.set(true);
     }
@@ -227,7 +227,7 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
         // Refresh user profile to get updated info
         await this.authService.fetchUserProfile();
       } else {
-        alert('Failed to bind Telegram: ' + (result.error || 'Unknown error'));
+        alert('❌ ' + (result.error || 'Failed to bind Telegram account'));
       }
 
     } catch (error) {
