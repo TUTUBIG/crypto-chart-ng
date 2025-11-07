@@ -34,7 +34,7 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // Telegram bot info
   readonly TELEGRAM_BOT_USERNAME = 'fipulse_bot'; // Replace with actual bot username
-  
+
   // Long polling for bot status
   private pollingInterval?: any;
   private pollingTimeout?: any;
@@ -48,7 +48,7 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
     // effect() must be called in constructor (injection context)
     effect(() => {
       const isLinked = this.isTelegramLinked;
-      
+
       if (!isLinked) {
         // Load widget when Telegram is not linked
         setTimeout(() => this.loadTelegramWidgetForIntegration(), 300);
@@ -78,13 +78,13 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnDestroy(): void {
     // Clean up global callback
     delete window.onTelegramAuth;
-    
+
     // Stop long polling if active
     this.stopPollingBotStatus();
   }
 
   get isTelegramLinked(): boolean {
-    return !!(this.currentUser()?.telegram_id && this.currentUser()?.telegram_username);
+    return !!(this.currentUser()?.telegram_id);
   }
 
   get isBotReady(): boolean {
@@ -148,7 +148,7 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
       if (enabled) {
         const otherType = type === 'email' ? 'telegram' : 'email';
         const otherEnabled = type === 'email' ? this.telegramNotifications() : this.emailNotifications();
-        
+
         if (otherEnabled) {
           // Alert user that enabling this will disable the other method
           const confirmed = confirm(
@@ -157,7 +157,7 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
             `${otherType === 'email' ? 'Email' : 'Telegram'} notifications.\n\n` +
             `Do you want to continue?`
           );
-          
+
           if (!confirmed) {
             // User cancelled, revert the toggle
             return;
@@ -196,9 +196,9 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
         // Update both states based on server response to ensure sync
         this.emailNotifications.set(data.email_enabled ?? false);
         this.telegramNotifications.set(data.telegram_enabled ?? false);
-        
+
         console.log(`[Profile] ${type} notifications ${enabled ? 'enabled' : 'disabled'}`);
-        
+
         // Show success message
         if (enabled) {
           alert(`✅ ${type === 'email' ? 'Email' : 'Telegram'} notifications enabled successfully!`);
@@ -293,7 +293,7 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // Clear existing content
     container.innerHTML = '';
-    
+
     const script = document.createElement('script');
     script.src = 'https://telegram.org/js/telegram-widget.js?22';
     script.async = true;
@@ -301,7 +301,7 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
     script.setAttribute('data-size', 'medium');
     script.setAttribute('data-onauth', 'onTelegramAuth(user)');
     script.setAttribute('data-request-access', 'write');
-    
+
     script.onerror = () => {
       console.error('[Profile] Failed to load Telegram widget script');
     };
@@ -309,7 +309,7 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
     script.onload = () => {
       console.log('[Profile] Telegram widget script loaded successfully');
     };
-    
+
     container.appendChild(script);
   }
 
@@ -406,18 +406,18 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
 
         // Poll user profile to check bot_started status
         const result = await this.authService.fetchUserProfile();
-        
+
         if (result.success) {
           const user = this.authService.currentUser();
-          
+
           if (user?.bot_started) {
             console.log('[Profile] ✅ Bot started detected via polling!');
             this.stopPollingBotStatus();
             this.pollingMessage.set('✅ Bot is now connected and ready!');
-            
+
             // Load widget after user data is updated
             setTimeout(() => this.loadTelegramWidgetForIntegration(), 300);
-            
+
             // Clear the message after a short delay
             setTimeout(() => {
               this.pollingMessage.set('');
@@ -453,12 +453,12 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
       clearInterval(this.pollingInterval);
       this.pollingInterval = undefined;
     }
-    
+
     if (this.pollingTimeout) {
       clearTimeout(this.pollingTimeout);
       this.pollingTimeout = undefined;
     }
-    
+
     this.isPollingBotStatus.set(false);
   }
 
@@ -468,10 +468,10 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
    */
   onStartBotClick(): void {
     console.log('[Profile] User clicked Start Bot button - starting long polling');
-    
+
     // Start long polling to check bot_started status
     this.startPollingBotStatus();
-    
+
     // The link will open Telegram in a new tab
     // Long polling will continue in the background to detect when bot is started
   }

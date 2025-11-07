@@ -57,10 +57,22 @@ export class App implements OnInit, OnDestroy {
     private authService: AuthService
   ) {}
 
-  ngOnInit(): void {
-    console.log('[App] Initializing global WebSocket connection...');
+  async ngOnInit(): Promise<void> {
+    console.log('[App] Initializing application...');
 
-    // Connect to WebSocket immediately without authorization check
+    // Check if user is authenticated and fetch fresh profile data
+    if (this.authService.isAuthenticated()) {
+      console.log('[App] User is authenticated, fetching profile...');
+      const result = await this.authService.fetchUserProfile();
+      if (result.success) {
+        console.log('[App] User profile loaded successfully');
+      } else {
+        console.warn('[App] Failed to load user profile:', result.error);
+      }
+    }
+
+    // Connect to WebSocket
+    console.log('[App] Initializing global WebSocket connection...');
     this.wsService.connect();
   }
 

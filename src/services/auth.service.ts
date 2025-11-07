@@ -14,6 +14,8 @@ export interface User {
   avatar_url?: string;
   bot_started?: boolean;
   bot_started_at?: string;
+  email_enabled?: boolean;
+  telegram_enabled?: boolean;
   created_at: string;
   last_login_at?: string;
 }
