@@ -88,7 +88,15 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   get isBotReady(): boolean {
-    return this.isTelegramLinked && !!this.currentUser()?.bot_started;
+    const botStarted = this.currentUser()?.bot_started;
+    // Handle both boolean and number (0/1) formats
+    return this.isTelegramLinked && botStarted === true;
+  }
+
+  get isBotStarted(): boolean {
+    const botStarted = this.currentUser()?.bot_started;
+    // Handle both boolean and number (0/1) formats
+    return botStarted === true;
   }
 
   /**
@@ -142,7 +150,7 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  async updateNotificationPreference(type: 'email' | 'telegram', enabled: boolean): Promise<void> {
+  async updateNotificationPreference(type: 'email' | 'telegram', enabled: boolean, event?: Event): Promise<void> {
     try {
       // Check if user is trying to enable this method while another is already enabled
       if (enabled) {
@@ -150,34 +158,33 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
         const otherEnabled = type === 'email' ? this.telegramNotifications() : this.emailNotifications();
 
         if (otherEnabled) {
-          // Alert user that enabling this will disable the other method
-          const confirmed = confirm(
-            `⚠️ Only one notification method can be enabled at a time.\n\n` +
-            `Enabling ${type === 'email' ? 'Email' : 'Telegram'} notifications will automatically disable ` +
-            `${otherType === 'email' ? 'Email' : 'Telegram'} notifications.\n\n` +
-            `Do you want to continue?`
-          );
-
-          if (!confirmed) {
-            // User cancelled, revert the toggle
-            return;
+          // Prevent the toggle from changing
+          if (event && event.target) {
+            (event.target as HTMLInputElement).checked = false;
           }
+          
+          // Revert UI state immediately without API call
+          if (type === 'email') {
+            this.emailNotifications.set(false);
+          } else {
+            this.telegramNotifications.set(false);
+          }
+          
+          // Alert user that they need to disable the other method first
+          alert(
+            `⚠️ Only one notification method can be enabled at a time.\n\n` +
+            `Please disable ${otherType === 'email' ? 'Email' : 'Telegram'} notifications first before enabling ` +
+            `${type === 'email' ? 'Email' : 'Telegram'} notifications.`
+          );
+          return;
         }
       }
 
       // Update UI state immediately for better UX
       if (type === 'email') {
         this.emailNotifications.set(enabled);
-        // If enabling email, disable telegram
-        if (enabled) {
-          this.telegramNotifications.set(false);
-        }
       } else {
         this.telegramNotifications.set(enabled);
-        // If enabling telegram, disable email
-        if (enabled) {
-          this.emailNotifications.set(false);
-        }
       }
 
       const response = await this.authService.authenticatedFetch(
@@ -207,10 +214,21 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
         // Endpoint not available yet, keep local state but warn user
         console.warn(`[Profile] Notification preferences endpoint not available. Preference saved locally only.`);
       } else {
+        // Try to get error message from response
+        let errorMessage = `Failed to update notification preferences. Please try again.`;
+        try {
+          const errorData = await response.json();
+          if (errorData.error) {
+            errorMessage = errorData.error;
+          }
+        } catch (e) {
+          // If response is not JSON, use default message
+        }
+        
         console.error(`[Profile] Failed to update ${type} notification preference:`, response.status, response.statusText);
         // Revert on error
         await this.loadNotificationPreferences();
-        alert(`❌ Failed to update notification preferences. Please try again.`);
+        alert(`❌ ${errorMessage}`);
       }
     } catch (error) {
       // Handle network errors
@@ -381,7 +399,7 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     // Don't start if bot is already started
-    if (this.currentUser()?.bot_started) {
+    if (this.isBotStarted) {
       console.log('[Profile] Bot already started, skipping polling');
       return;
     }
@@ -410,7 +428,9 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
         if (result.success) {
           const user = this.authService.currentUser();
 
-          if (user?.bot_started) {
+          // Check if bot is started (handle both boolean and number formats)
+          const botStarted = user?.bot_started;
+          if (botStarted === true) {
             console.log('[Profile] ✅ Bot started detected via polling!');
             this.stopPollingBotStatus();
             this.pollingMessage.set('✅ Bot is now connected and ready!');

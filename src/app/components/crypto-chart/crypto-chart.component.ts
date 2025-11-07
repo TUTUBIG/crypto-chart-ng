@@ -505,8 +505,18 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private convertCandleToChartData(candle: Candle): CandlestickData {
+    // Convert UTC timestamp to local time for display
+    // Lightweight Charts displays timestamps in UTC, so we adjust by timezone offset
+    const utcTimestamp = candle.Timestamp;
+    const utcDate = new Date(utcTimestamp * 1000); // Create Date from UTC timestamp
+    // Get timezone offset in minutes and convert to seconds
+    const timezoneOffsetSeconds = utcDate.getTimezoneOffset() * 60;
+    // Adjust timestamp: subtract offset to convert UTC to local time
+    // (getTimezoneOffset returns positive for timezones behind UTC, so we subtract)
+    const localTimestamp = utcTimestamp - timezoneOffsetSeconds;
+    
     return {
-      time: candle.Timestamp as any,
+      time: localTimestamp as any,
       open: candle.OpenPrice,
       high: candle.HighPrice,
       low: candle.LowPrice,

@@ -61,10 +61,48 @@
                 </div>
                 <div class="telegram-details">
                   <div class="telegram-username">@{{ currentUser()?.telegram_username }}</div>
-                  <div class="telegram-label">Receiving notifications</div>
+                  @if (isBotReady) {
+                    <div class="telegram-label">Receiving notifications</div>
+                  } @else {
+                    <div class="telegram-label">Start the bot to enable notifications</div>
+                  }
                 </div>
               </div>
             </div>
+            
+            @if (!isBotStarted) {
+              <div class="bot-status-info info" style="margin-top: 1rem;">
+                <svg class="status-icon" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                </svg>
+                <div>
+                  <strong>Start the bot</strong>
+                  <span class="status-subtext">Click the button below to start the bot on Telegram</span>
+                </div>
+              </div>
+              
+              <div class="connect-actions" style="margin-top: 1rem;">
+                <a 
+                  [href]="telegramBotLink" 
+                  target="_blank" 
+                  class="btn-start-bot btn-primary-action"
+                  (click)="onStartBotClick()"
+                  [class.polling]="isPollingBotStatus()">
+                  <svg class="btn-icon" [class.spinning]="isPollingBotStatus()" viewBox="0 0 24 24" fill="currentColor">
+                    @if (isPollingBotStatus()) {
+                      <path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/>
+                    } @else {
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/>
+                    }
+                  </svg>
+                  @if (isPollingBotStatus()) {
+                    Checking...
+                  } @else {
+                    Start @{{ TELEGRAM_BOT_USERNAME }}
+                  }
+                </a>
+              </div>
+            }
           </div>
         } @else {
           <!-- Not Connected State -->
@@ -102,9 +140,9 @@
                     }
                   </div>
                 </div>
-                <div class="connect-step" [class.active]="isTelegramLinked && !currentUser()?.bot_started" [class.completed]="currentUser()?.bot_started">
-                  <span class="step-badge" [class.active]="isTelegramLinked && !currentUser()?.bot_started" [class.completed]="currentUser()?.bot_started">
-                    @if (currentUser()?.bot_started) {
+                <div class="connect-step" [class.active]="isTelegramLinked && !isBotStarted" [class.completed]="isBotStarted">
+                  <span class="step-badge" [class.active]="isTelegramLinked && !isBotStarted" [class.completed]="isBotStarted">
+                    @if (isBotStarted) {
                       <svg viewBox="0 0 24 24" fill="currentColor">
                         <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
                       </svg>
@@ -114,7 +152,7 @@
                   </span>
                   <div class="step-text">
                     <strong>Start the bot</strong> 
-                    @if (currentUser()?.bot_started) {
+                    @if (isBotStarted) {
                       <span class="step-status-text">✓ Completed</span>
                     } @else if (isTelegramLinked) {
                       <span class="step-emphasis">← Next step</span>
@@ -138,7 +176,7 @@
                 </div>
               }
 
-              @if (isTelegramLinked && currentUser()?.bot_started) {
+              @if (isTelegramLinked && isBotStarted) {
                 <div class="bot-status-info success">
                   <svg class="status-icon" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
@@ -148,7 +186,7 @@
                     <span class="status-subtext">You started the bot {{ formatBotStartedDate(currentUser()?.bot_started_at) }}</span>
                   </div>
                 </div>
-              } @else if (isTelegramLinked && !currentUser()?.bot_started) {
+              } @else if (isTelegramLinked && !isBotStarted) {
                 <div class="bot-status-info info">
                   <svg class="status-icon" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
@@ -181,7 +219,7 @@
               }
 
               <div class="connect-actions">
-                @if (isTelegramLinked && !currentUser()?.bot_started) {
+                @if (isTelegramLinked && !isBotStarted) {
                   <a 
                     [href]="telegramBotLink" 
                     target="_blank" 
@@ -251,7 +289,7 @@
                 <input
                   type="checkbox"
                   [checked]="emailNotifications() ?? false"
-                  (change)="updateNotificationPreference('email', $any($event.target).checked)">
+                  (change)="updateNotificationPreference('email', $any($event.target).checked, $event)">
                 <span class="toggle-slider"></span>
               </label>
             </div>
@@ -273,7 +311,7 @@
                   type="checkbox"
                   [checked]="telegramNotifications() ?? false"
                   [disabled]="!isBotReady"
-                  (change)="updateNotificationPreference('telegram', $any($event.target).checked)">
+                  (change)="updateNotificationPreference('telegram', $any($event.target).checked, $event)">
                 <span class="toggle-slider"></span>
               </label>
             </div>

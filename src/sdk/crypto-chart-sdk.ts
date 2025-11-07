@@ -332,13 +332,13 @@ export class CryptoChartSDK {
       match: tradeMinuteTimestamp === latestCandleTimestamp
     });
 
-    // Check if trade belongs to the latest candle or is within a reasonable time window
+    // Check if trade belongs to the latest candle or is for a new candle period
     const timeDiff = tradeMinuteTimestamp - latestCandleTimestamp;
-    const isExactMatch = timeDiff === 0; // Trade is for the current candle
-    const isRecentCandle = timeDiff > 0 && timeDiff <= 120; // Within 2 minutes ahead
-    const isFutureCandle = timeDiff > 120 && timeDiff <= 600; // 2-10 minutes ahead (new candle period)
+    const isExactMatch = timeDiff === 0; // Trade is for the current candle (same minute)
+    const isNewCandle = timeDiff > 0; // Trade is for a different minute period (new candle)
+    const isTooFarAhead = timeDiff > 600; // Trade is more than 10 minutes ahead (ignore)
 
-    if (isExactMatch || isRecentCandle) {
+    if (isExactMatch) {
       // Update existing candle with trade data
       // Replace the latest candle with updated one
       this.candles[this.candles.length - 1] = {
@@ -362,7 +362,7 @@ export class CryptoChartSDK {
 
       // Notify chart to update
       this.notifyChartUpdate();
-    } else if (isFutureCandle) {
+    } else if (isNewCandle && !isTooFarAhead) {
       // Trade is for a new candle period - create a new candle
       console.log('🆕 [SDK] Trade is for new candle period - creating new candle:', {
         tradeMinuteTimestamp: tradeMinuteTimestamp,
@@ -419,7 +419,7 @@ export class CryptoChartSDK {
         timeDiff: timeDiff
       });
       return;
-    } else {
+    } else if (isTooFarAhead) {
       // Trade is too far in the future (>10min ahead)
       console.log('⏭️  [SDK] Ignoring future trade - too far ahead:', {
         tradeMinuteTimestamp: tradeMinuteTimestamp,
