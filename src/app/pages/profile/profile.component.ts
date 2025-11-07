@@ -2,9 +2,7 @@ import { Component, signal, computed, OnInit, OnDestroy, AfterViewInit, effect }
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../../services/auth.service';
-import { WebSocketService } from '../../../services/websocket.service';
 import { API_CONFIG } from '../../../config/api.config';
-import { Subscription } from 'rxjs';
 
 declare global {
   interface Window {
@@ -37,9 +35,6 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
   // Telegram bot info
   readonly TELEGRAM_BOT_USERNAME = 'fipulse_bot'; // Replace with actual bot username
   
-  // WebSocket subscription
-  private botStartedSubscription?: Subscription;
-  
   // Long polling for bot status
   private pollingInterval?: any;
   private pollingTimeout?: any;
@@ -47,9 +42,19 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly POLLING_MAX_DURATION = 120000; // Stop after 2 minutes
 
   constructor(
-    private authService: AuthService,
-    private wsService: WebSocketService
-  ) {}
+    private authService: AuthService
+  ) {
+    // Watch for connection status changes and load widget when ready
+    // effect() must be called in constructor (injection context)
+    effect(() => {
+      const isLinked = this.isTelegramLinked;
+      
+      if (!isLinked) {
+        // Load widget when Telegram is not linked
+        setTimeout(() => this.loadTelegramWidgetForIntegration(), 300);
+      }
+    });
+  }
 
   ngOnInit(): void {
     this.loadNotificationPreferences();
@@ -58,26 +63,13 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
     window.onTelegramAuth = (user: any) => {
       this.handleTelegramBinding(user);
     };
-    
-    // Subscribe to bot_started WebSocket events
-    this.subscribeToBotStartedEvents();
-
-    // Watch for connection status changes and load widget when ready
-    effect(() => {
-      const isConnected = this.isTelegramConnected;
-      
-      if (!isConnected) {
-        // Load widget when Telegram is not connected
-        setTimeout(() => this.loadTelegramWidgetForIntegration(), 300);
-      }
-    });
   }
 
   ngAfterViewInit(): void {
-    // Load widget if Telegram is not connected after view is initialized
+    // Load widget if Telegram is not linked after view is initialized
     // Use a delay to ensure Angular has fully rendered the conditional content
     setTimeout(() => {
-      if (!this.isTelegramConnected) {
+      if (!this.isTelegramLinked) {
         this.loadTelegramWidgetForIntegration();
       }
     }, 300);
@@ -87,17 +79,16 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
     // Clean up global callback
     delete window.onTelegramAuth;
     
-    // Unsubscribe from WebSocket events
-    if (this.botStartedSubscription) {
-      this.botStartedSubscription.unsubscribe();
-    }
-    
     // Stop long polling if active
     this.stopPollingBotStatus();
   }
 
-  get isTelegramConnected(): boolean {
+  get isTelegramLinked(): boolean {
     return !!(this.currentUser()?.telegram_id && this.currentUser()?.telegram_username);
+  }
+
+  get isBotReady(): boolean {
+    return this.isTelegramLinked && !!this.currentUser()?.bot_started;
   }
 
   /**
@@ -153,11 +144,40 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
 
   async updateNotificationPreference(type: 'email' | 'telegram', enabled: boolean): Promise<void> {
     try {
+      // Check if user is trying to enable this method while another is already enabled
+      if (enabled) {
+        const otherType = type === 'email' ? 'telegram' : 'email';
+        const otherEnabled = type === 'email' ? this.telegramNotifications() : this.emailNotifications();
+        
+        if (otherEnabled) {
+          // Alert user that enabling this will disable the other method
+          const confirmed = confirm(
+            `⚠️ Only one notification method can be enabled at a time.\n\n` +
+            `Enabling ${type === 'email' ? 'Email' : 'Telegram'} notifications will automatically disable ` +
+            `${otherType === 'email' ? 'Email' : 'Telegram'} notifications.\n\n` +
+            `Do you want to continue?`
+          );
+          
+          if (!confirmed) {
+            // User cancelled, revert the toggle
+            return;
+          }
+        }
+      }
+
       // Update UI state immediately for better UX
       if (type === 'email') {
         this.emailNotifications.set(enabled);
+        // If enabling email, disable telegram
+        if (enabled) {
+          this.telegramNotifications.set(false);
+        }
       } else {
         this.telegramNotifications.set(enabled);
+        // If enabling telegram, disable email
+        if (enabled) {
+          this.emailNotifications.set(false);
+        }
       }
 
       const response = await this.authService.authenticatedFetch(
@@ -172,29 +192,37 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
       );
 
       if (response.ok) {
+        const data = await response.json();
+        // Update both states based on server response to ensure sync
+        this.emailNotifications.set(data.email_enabled ?? false);
+        this.telegramNotifications.set(data.telegram_enabled ?? false);
+        
         console.log(`[Profile] ${type} notifications ${enabled ? 'enabled' : 'disabled'}`);
+        
+        // Show success message
+        if (enabled) {
+          alert(`✅ ${type === 'email' ? 'Email' : 'Telegram'} notifications enabled successfully!`);
+        }
       } else if (response.status === 404) {
         // Endpoint not available yet, keep local state but warn user
         console.warn(`[Profile] Notification preferences endpoint not available. Preference saved locally only.`);
-        // Revert to previous state if needed, or keep the local change
-        // For now, we'll keep the local change
       } else {
         console.error(`[Profile] Failed to update ${type} notification preference:`, response.status, response.statusText);
-        // Optionally revert on error
-        // if (type === 'email') {
-        //   this.emailNotifications.set(!enabled);
-        // } else {
-        //   this.telegramNotifications.set(!enabled);
-        // }
+        // Revert on error
+        await this.loadNotificationPreferences();
+        alert(`❌ Failed to update notification preferences. Please try again.`);
       }
     } catch (error) {
       // Handle network errors
       if (error instanceof Error && error.message.includes('Not authenticated')) {
         console.warn('[Profile] Not authenticated, cannot save notification preferences');
+        alert('❌ You must be logged in to update notification preferences.');
       } else {
         console.error(`[Profile] Error updating ${type} notification preference:`, error);
+        alert('❌ An error occurred. Please try again.');
       }
-      // UI state was already updated, so it remains changed
+      // Revert to server state on error
+      await this.loadNotificationPreferences();
     }
   }
 
@@ -242,8 +270,8 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private loadTelegramWidgetForIntegration(): void {
     // Check conditions before trying to load
-    if (this.isTelegramConnected) {
-      console.log('[Profile] Telegram already connected, skipping widget load');
+    if (this.isTelegramLinked) {
+      console.log('[Profile] Telegram already linked, skipping widget load');
       return;
     }
 
@@ -341,50 +369,24 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   /**
-   * Subscribe to bot_started WebSocket events
-   * Listens for real-time updates when user starts the bot
-   */
-  private subscribeToBotStartedEvents(): void {
-    console.log('[Profile] Subscribing to bot_started WebSocket events...');
-    
-    this.botStartedSubscription = this.wsService.onBotStarted$().subscribe(async (event) => {
-      console.log('[Profile] Bot started event received:', event);
-      
-      // Check if this event is for the current user
-      if (event.user_id === this.currentUser()?.id) {
-        console.log('[Profile] Bot started for current user! Refreshing user data...');
-        
-        // Refresh user data to get updated bot_started status
-        await this.authService.refreshCurrentUser();
-        
-        // Stop polling since bot is now started
-        this.stopPollingBotStatus();
-        
-        // Load widget after user data is refreshed
-        setTimeout(() => this.loadTelegramWidgetForIntegration(), 300);
-        
-        // Show success message (optional)
-        console.log('[Profile] ✅ Bot is now connected and ready!');
-      }
-    });
-  }
-
-  /**
    * Start long polling to check bot started status
    * Called when user clicks "Start bot" button
+   * Polls the backend every 3 seconds to detect when bot_started becomes true
    */
   startPollingBotStatus(): void {
     // Don't start if already polling
     if (this.isPollingBotStatus()) {
+      console.log('[Profile] Already polling, skipping');
       return;
     }
 
     // Don't start if bot is already started
     if (this.currentUser()?.bot_started) {
+      console.log('[Profile] Bot already started, skipping polling');
       return;
     }
 
-    console.log('[Profile] Starting long polling for bot status...');
+    console.log('[Profile] Starting long polling for bot status (polls every 3s for up to 2 minutes)');
     this.isPollingBotStatus.set(true);
     this.pollingMessage.set('Waiting for bot start...');
 
@@ -462,14 +464,16 @@ export class ProfileComponent implements OnInit, AfterViewInit, OnDestroy {
 
   /**
    * Handle click on "Start bot" button
-   * Opens Telegram and starts polling
+   * Opens Telegram and starts long polling to detect when bot is started
    */
   onStartBotClick(): void {
-    // Start polling when user clicks the button
+    console.log('[Profile] User clicked Start Bot button - starting long polling');
+    
+    // Start long polling to check bot_started status
     this.startPollingBotStatus();
     
     // The link will open Telegram in a new tab
-    // Polling will continue in the background
+    // Long polling will continue in the background to detect when bot is started
   }
 }
 
