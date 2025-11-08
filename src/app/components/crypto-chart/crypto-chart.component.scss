@@ -33,6 +33,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 16px;
 }
 
 .price-info {
@@ -128,6 +129,55 @@
   &.negative {
     color: #ef5350;
     background: rgba(239, 83, 80, 0.1);
+  }
+}
+
+.theme-switch {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+  
+  &:hover {
+    background: rgba(0, 0, 0, 0.1);
+    transform: scale(1.05);
+  }
+  
+  &:active {
+    transform: scale(0.95);
+  }
+  
+  &:focus-visible {
+    outline: 2px solid #2196f3;
+    outline-offset: 2px;
+  }
+  
+  .dark & {
+    background: rgba(255, 255, 255, 0.1);
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+  }
+}
+
+.theme-icon {
+  font-size: 20px;
+  line-height: 1;
+  user-select: none;
+  transition: transform 0.3s ease;
+  
+  .theme-switch:hover & {
+    transform: rotate(15deg);
   }
 }
 
@@ -233,6 +283,142 @@
   max-width: 100%;
   max-height: 100%;
   overflow: hidden;
+}
+
+.chart-legend {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+  font-size: 13px;
+  pointer-events: none;
+  user-select: none;
+  min-width: 180px;
+  
+  .dark & {
+    background: rgba(26, 26, 26, 0.95);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+  }
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  &.legend-token-name {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 2px;
+    
+    .legend-value {
+      color: #1a202c;
+      font-weight: 700;
+      
+      .dark & {
+        color: #fff;
+      }
+    }
+  }
+  
+  &.legend-price {
+    .legend-value {
+      font-weight: 600;
+      font-size: 16px;
+      
+      &.price-up {
+        color: #26a69a;
+        animation: pulse-up 0.5s ease;
+        
+        .dark & {
+          color: #00d4aa;
+        }
+      }
+      
+      &.price-down {
+        color: #ef5350;
+        animation: pulse-down 0.5s ease;
+        
+        .dark & {
+          color: #ff6b6b;
+        }
+      }
+    }
+  }
+  
+  &.legend-rate {
+    .legend-value {
+      font-weight: 500;
+      
+      &.positive {
+        color: #26a69a;
+        
+        .dark & {
+          color: #00d4aa;
+        }
+      }
+      
+      &.negative {
+        color: #ef5350;
+        
+        .dark & {
+          color: #ff6b6b;
+        }
+      }
+    }
+  }
+}
+
+.legend-label {
+  font-weight: 500;
+  color: #666;
+  font-size: 12px;
+  
+  .dark & {
+    color: #999;
+  }
+}
+
+.legend-value {
+  font-weight: 500;
+  color: #333;
+  
+  .dark & {
+    color: #fff;
+  }
+}
+
+.custom-attribution-logo {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  width: auto;
+  height: 20px;
+  max-width: 120px;
+  z-index: 10;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+  user-select: none;
+  
+  &:hover {
+    opacity: 0.9;
+  }
+  
+  .dark & {
+    opacity: 0.6;
+    
+    &:hover {
+      opacity: 0.8;
+    }
+  }
 }
 
 // Animations

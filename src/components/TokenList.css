@@ -19,13 +19,6 @@
   border-bottom: 1px solid #e0e0e0;
 }
 
-.header-title-section {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
 .token-list-header h3 {
   margin: 0;
   font-size: 20px;
@@ -400,31 +393,31 @@
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .search-container {
     min-width: unset;
   }
-  
+
   .filter-select {
     min-width: unset;
   }
-  
+
   .token-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .token-card {
     padding: 12px;
   }
-  
+
   .token-symbol {
     font-size: 16px;
   }
-  
+
   .token-metrics {
     gap: 4px;
   }
-  
+
   .metric {
     font-size: 11px;
   }

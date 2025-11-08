@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Token } from '../../../types/token';
 import { TokenListComponent } from '../token-list/token-list.component';
@@ -13,6 +13,8 @@ import { getApiTokenId } from '../../../utils/token-utils';
   styleUrls: ['./token-management.component.scss']
 })
 export class TokenManagementComponent {
+  @ViewChild(CryptoChartComponent, { static: false }) chartComponent?: CryptoChartComponent;
+  
   currentToken = signal<Token | null>(null);
   widgetConfig = signal<{
     tokenId: string;
@@ -20,6 +22,7 @@ export class TokenManagementComponent {
     title: string;
   } | null>(null);
   showChart = signal<boolean>(false);
+  chartTheme: 'light' | 'dark' = 'light';
 
   handleTokenClick(token: Token): void {
     this.currentToken.set(token);
@@ -61,6 +64,16 @@ export class TokenManagementComponent {
 
   onChartConnectionChange(status: string): void {
     console.log('Chart Status:', status);
+  }
+
+  toggleChartTheme(): void {
+    // Update local theme state first
+    this.chartTheme = this.chartTheme === 'light' ? 'dark' : 'light';
+    
+    // Toggle chart theme if chart component exists
+    if (this.chartComponent) {
+      this.chartComponent.toggleTheme();
+    }
   }
 }
 

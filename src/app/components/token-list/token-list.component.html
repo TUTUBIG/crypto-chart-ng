@@ -1,15 +1,6 @@
 <div class="token-list" [ngClass]="className">
   <!-- Header -->
   <div class="token-list-header">
-    <div class="header-title-section">
-      <h3>Available Tokens</h3>
-      @if (watchlistCount() > 0) {
-        <span class="watchlist-badge">
-          <span class="watchlist-icon">👁️</span>
-          {{ watchlistCount() }} watching
-        </span>
-      }
-    </div>
     <div class="token-list-controls">
       <div class="search-container">
         <input
@@ -21,25 +12,30 @@
         />
         <span class="search-icon">🔍</span>
       </div>
+      <div>
+        <select
+          [(ngModel)]="filterOptions.sortBy"
+          (ngModelChange)="handleFilterChange({ sortBy: filterOptions.sortBy })"
+          class="filter-select"
+          id="filter-sort"
+        >
+          <option value="token_symbol">Sort by Symbol</option>
+          <option value="token_name">Sort by Name</option>
+          <option value="daily_volume_usd">Sort by Volume</option>
+        </select>
 
-      <select
-        [(ngModel)]="filterOptions.sortBy"
-        (ngModelChange)="handleFilterChange({ sortBy: filterOptions.sortBy })"
-        class="filter-select"
-      >
-        <option value="token_symbol">Sort by Symbol</option>
-        <option value="token_name">Sort by Name</option>
-        <option value="daily_volume_usd">Sort by Volume</option>
-      </select>
+        <select
+          [(ngModel)]="filterOptions.sortOrder"
+          (ngModelChange)="handleFilterChange({ sortOrder: filterOptions.sortOrder })"
+          class="filter-select"
+          id="filter-order"
+        >
+          <option value="asc">Ascending</option>
+          <option value="desc">Descending</option>
+        </select>
+      </div>
 
-      <select
-        [(ngModel)]="filterOptions.sortOrder"
-        (ngModelChange)="handleFilterChange({ sortOrder: filterOptions.sortOrder })"
-        class="filter-select"
-      >
-        <option value="asc">Ascending</option>
-        <option value="desc">Descending</option>
-      </select>
+
     </div>
   </div>
 

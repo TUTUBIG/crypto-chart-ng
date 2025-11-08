@@ -11,7 +11,16 @@ import {
   ChangeDetectorRef
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { createChart, IChartApi, ISeriesApi, CandlestickData } from 'lightweight-charts';
+import {
+  createChart,
+  IChartApi,
+  ISeriesApi,
+  CandlestickData,
+  Time,
+  UTCTimestamp,
+  CandlestickSeries,
+  ColorType
+} from 'lightweight-charts';
 import {
   CryptoChartSDK,
   ChartData,
@@ -19,6 +28,7 @@ import {
   RealTimeTrade,
   ApiService
 } from '../../../sdk';
+import { formatVolume } from '../../../sdk/utils';
 import { API_CONFIG } from '../../../config/api.config';
 
 @Component({
@@ -35,7 +45,7 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input() tokenId!: string; // API token ID format: {chain_id}-{lowercase_token_address}
 
   // Optional display props
-  @Input() symbol?: string;
+  @Input() symbol!: string;
   @Input() title?: string;
   @Input() height?: number; // Optional - will use container height if not provided
   @Input() width?: number; // Optional - will use container width if not provided
@@ -46,6 +56,7 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input() showVolume: boolean = false;
   @Input() autoConnect: boolean = true;
   @Input() theme: 'light' | 'dark' = 'light';
+  @Input() customLogoUrl?: string; // Custom logo URL to replace TradingView attribution logo
 
   // Event emitters
   @Output() onError = new EventEmitter<string>();
@@ -57,6 +68,7 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
   chart: IChartApi | null = null;
   candlestickSeries: ISeriesApi<'Candlestick'> | null = null;
   sdk: CryptoChartSDK | null = null;
+  legendElement: HTMLElement | null = null;
   chartData: ChartData = {
     candles: [],
     lastUpdate: null,
@@ -67,6 +79,7 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
   priceChange: number | null = null;
   priceDirection: 'up' | 'down' | null = null;
   isWebSocketConnected: boolean = false;
+  chartTheme: 'light' | 'dark' = 'light'; // Internal chart theme (independent of widget theme)
   private previousPrice: number | null = null;
   private previousCandleCount: number = 0;
   private isInitialLoad: boolean = true;
@@ -83,6 +96,8 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
+    // Initialize chart theme from widget theme
+    this.chartTheme = this.theme;
     this.initializeChart();
     this.setupResizeObserver();
     if (this.sdk) {
@@ -94,6 +109,10 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.resizeObserver) {
       this.resizeObserver.disconnect();
       this.resizeObserver = null;
+    }
+    if (this.legendElement && this.legendElement.parentElement) {
+      this.legendElement.parentElement.removeChild(this.legendElement);
+      this.legendElement = null;
     }
     if (this.sdk) {
       this.sdk.destroy();
@@ -154,21 +173,15 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
   private initializeChart(): void {
     if (!this.chartContainer) return;
 
-    const isDark = this.theme === 'dark';
+    const isDark = this.chartTheme === 'dark';
     const containerEl = this.chartContainer.nativeElement;
-
-    // Get container dimensions - use container size if width/height not provided
-    const containerRect = containerEl.getBoundingClientRect();
-    const chartWidth = this.width || containerRect.width || 800;
-    const chartHeight = this.height || containerRect.height || 400;
 
     // Create new chart
     this.chart = createChart(containerEl, {
-      width: chartWidth,
-      height: chartHeight,
       layout: {
         background: { color: isDark ? '#1a1a1a' : '#ffffff' },
         textColor: isDark ? '#ffffff' : '#333333',
+        attributionLogo: false,
       },
       grid: {
         vertLines: { color: isDark ? '#2a2a2a' : '#f0f0f0' },
@@ -196,17 +209,147 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
         borderColor: isDark ? '#444444' : '#cccccc',
         timeVisible: true,
         secondsVisible: false,
-      },
+        rightOffset: 10,
+      }
     });
 
+
     // Create candlestick series
-    this.candlestickSeries = this.chart.addCandlestickSeries({
+    this.candlestickSeries = this.chart.addSeries(CandlestickSeries, {
       upColor: isDark ? '#00d4aa' : '#26a69a',
       downColor: isDark ? '#ff6b6b' : '#ef5350',
       borderVisible: false,
       wickUpColor: isDark ? '#00d4aa' : '#26a69a',
       wickDownColor: isDark ? '#ff6b6b' : '#ef5350',
     });
+
+    // Setup legend using lightweight-charts crosshair API
+    this.setupLegend();
+  }
+
+  private setupLegend(): void {
+    if (!this.chartContainer || !this.chart) return;
+
+    const containerEl = this.chartContainer.nativeElement;
+    const isDark = this.chartTheme === 'dark';
+
+    // Create legend element
+    this.legendElement = document.createElement('div');
+    this.legendElement.className = 'chart-legend';
+    this.legendElement.style.cssText = `
+      position: absolute;
+      left: 12px;
+      top: 12px;
+      z-index: 10;
+      font-size: 13px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.5;
+      pointer-events: none;
+      user-select: none;
+      padding: 10px 14px;
+      background: ${isDark ? 'rgba(26, 26, 26, 0.95)' : 'rgba(255, 255, 255, 0.95)'};
+      border-radius: 8px;
+      box-shadow: 0 2px 12px ${isDark ? 'rgba(0, 0, 0, 0.4)' : 'rgba(0, 0, 0, 0.15)'};
+      min-width: 180px;
+    `;
+    containerEl.appendChild(this.legendElement);
+
+    // Subscribe to crosshair moves to update legend
+    this.chart.subscribeCrosshairMove((param) => {
+      this.updateLegend(param);
+    });
+
+    // Initial legend update
+    this.updateLegend(null);
+  }
+
+  private updateLegend(crosshairParam: any): void {
+    if (!this.legendElement || !this.chart) return;
+
+    const isDark = this.chartTheme === 'dark';
+
+    // Get token name
+    const tokenName = this.title || this.symbol || 'Token';
+
+    // Get real-time price
+    const price = this.currentPrice !== null ? this.formatPrice(this.currentPrice) : '--';
+
+    // Get 24h rate
+    const rate24h = this.priceChange !== null ? this.formatPercentage(this.priceChange) : '--';
+    const rateColor = this.priceChange !== null
+      ? (this.priceChange >= 0
+        ? (isDark ? '#00d4aa' : '#26a69a')
+        : (isDark ? '#ff6b6b' : '#ef5350'))
+      : (isDark ? '#999' : '#666');
+
+    // Get OHLC and Volume from crosshair if available
+    let ohlcHtml = '';
+    if (crosshairParam && crosshairParam.time && crosshairParam.seriesData && this.candlestickSeries) {
+      const data = crosshairParam.seriesData.get(this.candlestickSeries) as CandlestickData | undefined;
+      if (data) {
+        // Find the corresponding candle to get volume
+        let volume = null;
+        const crosshairTime = crosshairParam.time as number;
+
+        // Match crosshair time with candle timestamp (accounting for timezone conversion)
+        const matchingCandle = this.chartData.candles.find(candle => {
+          const utcTimestamp = candle.Timestamp;
+          const utcDate = new Date(utcTimestamp * 1000);
+          const timezoneOffsetSeconds = utcDate.getTimezoneOffset() * 60;
+          const localTimestamp = utcTimestamp - timezoneOffsetSeconds;
+          // Match within 60 seconds tolerance (for minute candles)
+          return Math.abs(localTimestamp - crosshairTime) < 60;
+        });
+
+        if (matchingCandle) {
+          volume = matchingCandle.VolumeIn; // Use VolumeIn (USD volume)
+        }
+
+        const openColor = isDark ? '#999' : '#666';
+        const highColor = isDark ? '#00d4aa' : '#26a69a';
+        const lowColor = isDark ? '#ff6b6b' : '#ef5350';
+        const closeColor = isDark ? '#64b5f6' : '#2196f3';
+        const volumeColor = isDark ? '#999' : '#666';
+
+        const volumeHtml = volume !== null
+          ? `<div><span style="color: ${volumeColor};">V</span> <span style="color: ${isDark ? '#fff' : '#333'};">$${formatVolume(volume)}</span></div>`
+          : '';
+
+        ohlcHtml = `
+          <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid ${isDark ? '#333' : '#e0e0e0'};">
+            <div style="display: flex; gap: 12px; font-size: 11px; flex-wrap: wrap;">
+              <div><span style="color: ${openColor};">O</span> <span style="color: ${isDark ? '#fff' : '#333'};">${this.formatPrice(data.open)}</span></div>
+              <div><span style="color: ${highColor};">H</span> <span style="color: ${highColor};">${this.formatPrice(data.high)}</span></div>
+              <div><span style="color: ${lowColor};">L</span> <span style="color: ${lowColor};">${this.formatPrice(data.low)}</span></div>
+              <div><span style="color: ${closeColor};">C</span> <span style="color: ${closeColor};">${this.formatPrice(data.close)}</span></div>
+              ${volumeHtml}
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    // Update legend HTML
+    const textColor = isDark ? '#fff' : '#333';
+    const labelColor = isDark ? '#999' : '#666';
+    const priceColor = this.priceDirection === 'up'
+      ? (isDark ? '#00d4aa' : '#26a69a')
+      : this.priceDirection === 'down'
+      ? (isDark ? '#ff6b6b' : '#ef5350')
+      : (isDark ? '#64b5f6' : '#2196f3');
+
+    this.legendElement.innerHTML = `
+      <div style="font-weight: 700; font-size: 14px; color: ${textColor}; margin-bottom: 4px;">${tokenName}</div>
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+        <span style="color: ${labelColor}; font-size: 12px;">Price:</span>
+        <span style="font-weight: 600; font-size: 16px; color: ${priceColor};">$${price}</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="color: ${labelColor}; font-size: 12px;">24h:</span>
+        <span style="font-weight: 500; color: ${rateColor};">${rate24h}</span>
+      </div>
+      ${ohlcHtml}
+    `;
   }
 
   private setupResizeObserver(): void {
@@ -233,7 +376,7 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // Use provided width/height or container dimensions
     const newWidth = this.width || containerRect.width || 800;
-    const newHeight = this.height || containerRect.height || 400;
+    const newHeight = this.height || containerRect.height || 600;
 
     // Only resize if dimensions are valid
     if (newWidth > 0 && newHeight > 0) {
@@ -327,7 +470,7 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private handleChartUpdate(data: ChartData): void {
     console.log('📥 Component: Received chart update from SDK with', data.candles.length, 'candles');
-    
+
     if (data.candles.length > 0) {
       const latestCandle = data.candles[data.candles.length - 1];
       console.log('   Latest candle in update:', {
@@ -351,7 +494,7 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
     const previousCount = this.previousCandleCount;
     const currentCount = updatedData.candles.length;
     const candleCountDiff = currentCount - previousCount;
-    
+
     console.log('   Candle count: previous =', previousCount, ', current =', currentCount, ', diff =', candleCountDiff);
 
     // Define threshold for incremental updates
@@ -412,6 +555,9 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
       this.priceChange = change;
     }
 
+    // Update legend when data changes
+    this.updateLegend(null);
+
     this.onDataUpdate.emit(updatedData);
     this.cdr.detectChanges();
   }
@@ -437,6 +583,9 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
       }, 1000);
     }
 
+    // Update legend when price changes
+    this.updateLegend(null);
+
     // Update the latest candle on the chart with real-time trade data
     if (this.chartData.candles.length > 0) {
       const latestCandle = this.chartData.candles[this.chartData.candles.length - 1];
@@ -448,7 +597,7 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
       // Check if trade belongs to the current candle
       // Note: SDK handles candle creation, component only visualizes
       const timeDiff = tradeMinuteTimestamp - latestCandleTimestamp;
-      
+
       console.log('💰 Component: Processing trade with timeDiff:', timeDiff, 'seconds');
 
       // Only handle exact matches or very recent trades (within 2 minutes)
@@ -514,9 +663,9 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
     // Adjust timestamp: subtract offset to convert UTC to local time
     // (getTimezoneOffset returns positive for timezones behind UTC, so we subtract)
     const localTimestamp = utcTimestamp - timezoneOffsetSeconds;
-    
+
     return {
-      time: localTimestamp as any,
+      time: localTimestamp as UTCTimestamp,
       open: candle.OpenPrice,
       high: candle.HighPrice,
       low: candle.LowPrice,
@@ -549,7 +698,13 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
       low: candleData.low,
       close: candleData.close
     });
-    
+
+    // Update current price from candle close price
+    this.currentPrice = candle.ClosePrice;
+
+    // Update legend when candle updates
+    this.updateLegend(null);
+
     this.candlestickSeries.update(candleData);
 
     if (this.chart) {
@@ -578,6 +733,62 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
     if (percentage === null) return '--';
     const sign = percentage >= 0 ? '+' : '';
     return `${sign}${percentage.toFixed(2)}%`;
+  }
+
+  /**
+   * Toggle chart theme (can be called from parent component)
+   */
+  toggleTheme(): void {
+    // Only toggle chart theme, not widget theme
+    this.chartTheme = this.chartTheme === 'light' ? 'dark' : 'light';
+
+    // Update chart theme if chart exists
+    if (this.chart) {
+      const isDark = this.chartTheme === 'dark';
+      this.chart.applyOptions({
+        layout: {
+          background: { color: isDark ? '#1a1a1a' : '#ffffff' },
+          textColor: isDark ? '#ffffff' : '#333333',
+        },
+        grid: {
+          vertLines: { color: isDark ? '#2a2a2a' : '#f0f0f0' },
+          horzLines: { color: isDark ? '#2a2a2a' : '#f0f0f0' },
+        },
+        crosshair: {
+          vertLine: {
+            color: isDark ? '#666666' : '#cccccc',
+          },
+          horzLine: {
+            color: isDark ? '#666666' : '#cccccc',
+          },
+        },
+        rightPriceScale: {
+          borderColor: isDark ? '#444444' : '#cccccc',
+        },
+        timeScale: {
+          borderColor: isDark ? '#444444' : '#cccccc',
+        },
+      });
+
+      // Update candlestick series colors
+      if (this.candlestickSeries) {
+        this.candlestickSeries.applyOptions({
+          upColor: isDark ? '#00d4aa' : '#26a69a',
+          downColor: isDark ? '#ff6b6b' : '#ef5350',
+          wickUpColor: isDark ? '#00d4aa' : '#26a69a',
+          wickDownColor: isDark ? '#ff6b6b' : '#ef5350',
+        });
+      }
+
+      // Update legend background color
+      if (this.legendElement) {
+        this.legendElement.style.background = isDark ? 'rgba(26, 26, 26, 0.95)' : 'rgba(255, 255, 255, 0.95)';
+        this.legendElement.style.boxShadow = isDark ? '0 2px 12px rgba(0, 0, 0, 0.4)' : '0 2px 12px rgba(0, 0, 0, 0.15)';
+      }
+
+      // Update legend content with new theme colors
+      this.updateLegend(null);
+    }
   }
 }
 

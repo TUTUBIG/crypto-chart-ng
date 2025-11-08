@@ -36,12 +36,13 @@
     <div class="widgets-panel">
       <div class="panel-header">
         <h3>Chart Widget</h3>
-        @if (currentToken() && showChart()) {
-          <div class="widget-token-info">
-            <span class="widget-token-symbol">{{ currentToken()!.token_symbol || currentToken()!.symbol }}</span>
-            <span class="widget-token-name">{{ currentToken()!.token_name || currentToken()!.name }}</span>
-          </div>
-        }
+        <button class="theme-switch" (click)="toggleChartTheme()" [attr.aria-label]="'Switch chart to ' + (chartTheme === 'light' ? 'dark' : 'light') + ' theme'">
+          @if (chartTheme === 'light') {
+            <span class="theme-icon">🌙</span>
+          } @else {
+            <span class="theme-icon">☀️</span>
+          }
+        </button>
       </div>
 
       <div class="widgets-container">
@@ -50,6 +51,7 @@
             <div class="fixed-widget-frame">
               <app-crypto-chart
                 [tokenId]="widgetConfig()!.tokenId"
+                [symbol]="widgetConfig()!.symbol"
                 [autoConnect]="true"
                 [theme]="'light'"
                 (onError)="onChartError($event)"
