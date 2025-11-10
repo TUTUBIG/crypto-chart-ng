@@ -147,7 +147,6 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
       },
       {
         maxCandles: API_CONFIG.CHART.MAX_CANDLES,
-        updateInterval: API_CONFIG.CHART.UPDATE_INTERVAL,
         autoScroll: true
       }
     );

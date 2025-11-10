@@ -30,7 +30,6 @@ export interface ChartData {
 // Configuration interfaces
 export interface ChartConfig {
   maxCandles?: number;
-  updateInterval?: number;
   autoScroll?: boolean;
 }
 

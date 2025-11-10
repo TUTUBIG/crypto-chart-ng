@@ -28,7 +28,6 @@ export class CryptoChartSDK {
   private isLoading = false;
   private error: string | null = null;
   private currentTokenId: string | null = null;
-  private updateInterval: number | null = null;
 
   // Callbacks
   private onChartUpdateCallback: ChartUpdateCallback | null = null;
@@ -47,7 +46,6 @@ export class CryptoChartSDK {
     this.wsService = new WebSocketService(wsConfig);
     this.chartConfig = {
       maxCandles: 1000,
-      updateInterval: 60000, // 1 minute
       autoScroll: true,
       ...chartConfig
     };
@@ -81,9 +79,6 @@ export class CryptoChartSDK {
 
       // Verify token ID is still set after async operation
       console.log('[SDK] After fetching, currentTokenId is:', this.currentTokenId);
-
-      // Set up periodic updates as fallback (will only run when WebSocket is disconnected)
-      this.startPeriodicUpdates();
 
       this.notifyChartUpdate();
 
@@ -184,11 +179,6 @@ export class CryptoChartSDK {
       this.candles = this.candles.slice(-newConfig.maxCandles);
       this.notifyChartUpdate();
     }
-
-    // Update interval if changed
-    if (newConfig.updateInterval !== undefined) {
-      this.startPeriodicUpdates();
-    }
   }
 
   /**
@@ -257,11 +247,6 @@ export class CryptoChartSDK {
    * Cleanup and disconnect
    */
   destroy(): void {
-    if (this.updateInterval) {
-      clearInterval(this.updateInterval);
-      this.updateInterval = null;
-    }
-
     this.wsService.disconnect();
     this.candles = [];
     this.lastUpdate = null;
@@ -291,7 +276,7 @@ export class CryptoChartSDK {
     });
 
     this.wsService.onDisconnect(() => {
-      console.log('🔌 [SDK] WebSocket disconnected - periodic polling will continue as fallback');
+      console.log('🔌 [SDK] WebSocket disconnected');
       this.notifyConnectionChange('disconnected');
     });
 
@@ -430,99 +415,6 @@ export class CryptoChartSDK {
     }
   }
 
-  /**
-   * Start periodic polling as fallback mechanism
-   * Note: Polling is skipped when WebSocket is connected since real-time trades
-   * automatically create and update candles. This serves as a fallback for when
-   * WebSocket is disconnected or unavailable.
-   */
-  private startPeriodicUpdates(): void {
-    if (this.updateInterval) {
-      clearInterval(this.updateInterval);
-    }
-
-    if (this.chartConfig.updateInterval && this.currentTokenId) {
-      console.log(`📅 [SDK] Starting periodic polling (fallback mechanism) every ${this.chartConfig.updateInterval}ms`);
-      this.updateInterval = window.setInterval(async () => {
-        await this.fetchLatestCandle();
-      }, this.chartConfig.updateInterval);
-    }
-  }
-
-  private async fetchLatestCandle(): Promise<void> {
-    if (!this.currentTokenId) return;
-
-    // Skip periodic polling if WebSocket is connected (real-time trades handle updates)
-    if (this.wsService.isConnected()) {
-      console.log('⏭️  [SDK] Skipping periodic polling - WebSocket is connected and handling real-time updates');
-      return;
-    }
-
-    try {
-      console.log('🔄 [SDK] Fetching latest candle (WebSocket fallback) for tokenId:', this.currentTokenId);
-      const newCandle = await this.apiService.fetchSingleCandle(this.currentTokenId);
-
-      if (!newCandle) {
-        console.log('⚠️  [SDK] No new candle data received from API');
-        return;
-      }
-
-      console.log('📊 [SDK] Received candle:', {
-        timestamp: newCandle.Timestamp,
-        close: newCandle.ClosePrice,
-        open: newCandle.OpenPrice,
-        high: newCandle.HighPrice,
-        low: newCandle.LowPrice
-      });
-
-      // Check if we already have a candle for this timestamp
-      const existingIndex = this.candles.findIndex(
-        candle => candle.Timestamp === newCandle.Timestamp
-      );
-
-      if (existingIndex >= 0) {
-        // existing candle
-        console.log("[SDK] Skip with old candle")
-        return
-      } else {
-        // Add new candle (new time period)
-        this.candles.push(newCandle);
-        console.log(`➕ [SDK] Added NEW candle at index ${this.candles.length - 1}:`, {
-          timestamp: newCandle.Timestamp,
-          close: newCandle.ClosePrice,
-          totalCandles: this.candles.length
-        });
-
-        console.log("-----",this.candles)
-
-        // Ensure candles are sorted by timestamp (ascending)
-        this.candles.sort((a, b) => a.Timestamp - b.Timestamp);
-        console.log(`📊 [SDK] Candles sorted, total count: ${this.candles.length}`);
-      }
-
-      // Remove old data that cannot be updated
-      // Keep only recent candles within the configured limit
-      const maxCandles = this.chartConfig.maxCandles || 1000;
-      if (this.candles.length > maxCandles) {
-        const beforeCount = this.candles.length;
-        this.candles = this.candles.slice(-maxCandles);
-        console.log(`🗑️  [SDK] Pruned ${beforeCount - this.candles.length} old candles (keeping latest ${maxCandles})`);
-      }
-
-      // Also remove candles that are too old (older than 24 hours)
-      const cutoffTimestamp = Math.floor(Date.now() / 1000) - (24 * 60 * 60);
-      const beforePruneCount = this.candles.length;
-      this.candles = this.candles.filter(candle => candle.Timestamp >= cutoffTimestamp);
-      if (this.candles.length !== beforePruneCount) {
-        console.log(`🗑️  [SDK] Removed ${beforePruneCount - this.candles.length} stale candles (older than 24h)`);
-      }
-
-      this.lastUpdate = new Date();
-      this.notifyChartUpdate();
-    } catch (err) {
-      console.error('❌ [SDK] Error fetching latest candle:', err);
-    }
-  }
 
   private notifyChartUpdate(): void {
     const chartData = this.getChartData();
