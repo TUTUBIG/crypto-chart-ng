@@ -19,6 +19,8 @@ import {
   Time,
   UTCTimestamp,
   CandlestickSeries,
+  HistogramSeries,
+  HistogramData,
   ColorType
 } from 'lightweight-charts';
 import {
@@ -67,6 +69,7 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
   // Component state
   chart: IChartApi | null = null;
   candlestickSeries: ISeriesApi<'Candlestick'> | null = null;
+  volumeSeries: ISeriesApi<'Histogram'> | null = null;
   sdk: CryptoChartSDK | null = null;
   legendElement: HTMLElement | null = null;
   chartData: ChartData = {
@@ -205,6 +208,10 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
           bottom: 0.1,
         },
       },
+      leftPriceScale: {
+        visible: this.showVolume, // Show left price scale only when volume is enabled
+        borderColor: isDark ? '#444444' : '#cccccc',
+      },
       timeScale: {
         borderColor: isDark ? '#444444' : '#cccccc',
         timeVisible: true,
@@ -221,7 +228,20 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
       borderVisible: false,
       wickUpColor: isDark ? '#00d4aa' : '#26a69a',
       wickDownColor: isDark ? '#ff6b6b' : '#ef5350',
-    });
+    },0);
+
+    // Create volume series using panes (separate price scale)
+    if (this.showVolume) {
+      // Create volume series with its own price scale (creates separate pane)
+      this.volumeSeries = this.chart.addSeries(HistogramSeries, {
+        color: isDark ? '#26a69a80' : '#26a69a40', // Default color (will be overridden per data point)
+        priceFormat: {
+          type: 'volume',
+        },
+      },1);
+      this.chart.panes()[0].setStretchFactor(0.9)
+      this.chart.panes()[1].setStretchFactor(0.1)
+    }
 
     // Setup legend using lightweight-charts crosshair API
     this.setupLegend();
@@ -284,15 +304,19 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // Get OHLC and Volume from crosshair if available
     let ohlcHtml = '';
+    let candleChangeHtml = '';
+    let candleFluctuationHtml = '';
+
     if (crosshairParam && crosshairParam.time && crosshairParam.seriesData && this.candlestickSeries) {
       const data = crosshairParam.seriesData.get(this.candlestickSeries) as CandlestickData | undefined;
       if (data) {
-        // Find the corresponding candle to get volume
+        // Find the corresponding candle to get volume and calculate metrics
         let volume = null;
+        let matchingCandle: Candle | undefined;
         const crosshairTime = crosshairParam.time as number;
 
         // Match crosshair time with candle timestamp (accounting for timezone conversion)
-        const matchingCandle = this.chartData.candles.find(candle => {
+        matchingCandle = this.chartData.candles.find(candle => {
           const utcTimestamp = candle.Timestamp;
           const utcDate = new Date(utcTimestamp * 1000);
           const timezoneOffsetSeconds = utcDate.getTimezoneOffset() * 60;
@@ -303,6 +327,37 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
 
         if (matchingCandle) {
           volume = matchingCandle.VolumeIn; // Use VolumeIn (USD volume)
+
+          // Calculate price change rate for this candle (open to close)
+          const candleChange = matchingCandle.OpenPrice > 0
+            ? ((matchingCandle.ClosePrice - matchingCandle.OpenPrice) / matchingCandle.OpenPrice) * 100
+            : 0;
+          const candleChangeFormatted = this.formatPercentage(candleChange);
+          const candleChangeColor = candleChange >= 0
+            ? (isDark ? '#00d4aa' : '#26a69a')
+            : (isDark ? '#ff6b6b' : '#ef5350');
+
+          candleChangeHtml = `
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <span style="color: ${isDark ? '#999' : '#666'}; font-size: 11px;">Change:</span>
+              <span style="font-weight: 500; font-size: 11px; color: ${candleChangeColor};">${candleChangeFormatted}</span>
+            </div>
+          `;
+
+          // Calculate price fluctuation (violation rate) for this candle
+          // Fluctuation = (high - low) / open * 100
+          const candleFluctuation = matchingCandle.OpenPrice > 0
+            ? ((matchingCandle.HighPrice - matchingCandle.LowPrice) / matchingCandle.OpenPrice) * 100
+            : 0;
+          const candleFluctuationFormatted = this.formatPercentage(candleFluctuation);
+          const fluctuationColor = isDark ? '#ffa726' : '#ff9800'; // Orange color
+
+          candleFluctuationHtml = `
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <span style="color: ${isDark ? '#999' : '#666'}; font-size: 11px;">Fluctuation:</span>
+              <span style="font-weight: 500; font-size: 11px; color: ${fluctuationColor};">${candleFluctuationFormatted}</span>
+            </div>
+          `;
         }
 
         const openColor = isDark ? '#999' : '#666';
@@ -317,13 +372,15 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
 
         ohlcHtml = `
           <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid ${isDark ? '#333' : '#e0e0e0'};">
-            <div style="display: flex; gap: 12px; font-size: 11px; flex-wrap: wrap;">
+            <div style="display: flex; gap: 12px; font-size: 11px; flex-wrap: wrap; margin-bottom: 6px;">
               <div><span style="color: ${openColor};">O</span> <span style="color: ${isDark ? '#fff' : '#333'};">${this.formatPrice(data.open)}</span></div>
               <div><span style="color: ${highColor};">H</span> <span style="color: ${highColor};">${this.formatPrice(data.high)}</span></div>
               <div><span style="color: ${lowColor};">L</span> <span style="color: ${lowColor};">${this.formatPrice(data.low)}</span></div>
               <div><span style="color: ${closeColor};">C</span> <span style="color: ${closeColor};">${this.formatPrice(data.close)}</span></div>
               ${volumeHtml}
             </div>
+            ${candleChangeHtml}
+            ${candleFluctuationHtml}
           </div>
         `;
       }
@@ -344,9 +401,11 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
         <span style="color: ${labelColor}; font-size: 12px;">Price:</span>
         <span style="font-weight: 600; font-size: 16px; color: ${priceColor};">$${price}</span>
       </div>
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <span style="color: ${labelColor}; font-size: 12px;">24h:</span>
-        <span style="font-weight: 500; color: ${rateColor};">${rate24h}</span>
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 4px;">
+          <span style="color: ${labelColor}; font-size: 11px;">24h:</span>
+          <span style="font-weight: 500; font-size: 11px; color: ${rateColor};">${rate24h}</span>
+        </div>
       </div>
       ${ohlcHtml}
     `;
@@ -550,7 +609,7 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
         this.previousPrice = latestCandle.ClosePrice;
       }
 
-      // Calculate price change from the first candle
+      // Calculate price change from the first candle (24h change)
       const change = ((latestCandle.ClosePrice - firstCandle.OpenPrice) / firstCandle.OpenPrice) * 100;
       this.priceChange = change;
     }
@@ -673,11 +732,38 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
     };
   }
 
+  private convertCandleToVolumeData(candle: Candle): HistogramData {
+    // Convert UTC timestamp to local time for display (same as candlestick)
+    const utcTimestamp = candle.Timestamp;
+    const utcDate = new Date(utcTimestamp * 1000);
+    const timezoneOffsetSeconds = utcDate.getTimezoneOffset() * 60;
+    const localTimestamp = utcTimestamp - timezoneOffsetSeconds;
+
+    // Determine color based on price direction (green for up, red for down)
+    const isUp = candle.ClosePrice >= candle.OpenPrice;
+    const isDark = this.chartTheme === 'dark';
+    const color = isUp
+      ? (isDark ? '#00d4aa80' : '#26a69a40')
+      : (isDark ? '#ff6b6b80' : '#ef535040');
+
+    return {
+      time: localTimestamp as UTCTimestamp,
+      value: candle.VolumeIn, // Use VolumeIn (USD volume)
+      color: color,
+    };
+  }
+
   private updateChart(data: ChartData): void {
     if (!this.candlestickSeries || data.candles.length === 0) return;
 
     const chartData = data.candles.map(c => this.convertCandleToChartData(c));
     this.candlestickSeries.setData(chartData);
+
+    // Update volume series if enabled
+    if (this.showVolume && this.volumeSeries) {
+      const volumeData = data.candles.map(c => this.convertCandleToVolumeData(c));
+      this.volumeSeries.setData(volumeData);
+    }
 
     if (this.chart && chartData.length > 0) {
       this.chart.timeScale().scrollToRealTime();
@@ -707,6 +793,12 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.candlestickSeries.update(candleData);
 
+    // Update volume series if enabled
+    if (this.showVolume && this.volumeSeries) {
+      const volumeData = this.convertCandleToVolumeData(candle);
+      this.volumeSeries.update(volumeData);
+    }
+
     if (this.chart) {
       this.chart.timeScale().scrollToRealTime();
     }
@@ -731,8 +823,7 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
 
   formatPercentage(percentage: number | null): string {
     if (percentage === null) return '--';
-    const sign = percentage >= 0 ? '+' : '';
-    return `${sign}${percentage.toFixed(2)}%`;
+    return `${percentage.toFixed(2)}%`;
   }
 
   /**
@@ -765,6 +856,10 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
         rightPriceScale: {
           borderColor: isDark ? '#444444' : '#cccccc',
         },
+        leftPriceScale: {
+          visible: this.showVolume,
+          borderColor: isDark ? '#444444' : '#cccccc',
+        },
         timeScale: {
           borderColor: isDark ? '#444444' : '#cccccc',
         },
@@ -778,6 +873,21 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
           wickUpColor: isDark ? '#00d4aa' : '#26a69a',
           wickDownColor: isDark ? '#ff6b6b' : '#ef5350',
         });
+      }
+
+      // Update volume series colors if enabled
+      // Since volume colors are set per data point, refresh the volume data with new colors
+      if (this.showVolume && this.volumeSeries) {
+        // Update volume price scale border color
+        this.volumeSeries.priceScale().applyOptions({
+          borderColor: isDark ? '#444444' : '#cccccc',
+        });
+
+        // Refresh volume data with new theme colors
+        if (this.chartData.candles.length > 0) {
+          const volumeData = this.chartData.candles.map(c => this.convertCandleToVolumeData(c));
+          this.volumeSeries.setData(volumeData);
+        }
       }
 
       // Update legend background color

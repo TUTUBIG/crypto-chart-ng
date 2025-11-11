@@ -76,7 +76,10 @@ export class CryptoChartSDK {
       console.log('[SDK] Fetching historical candles for tokenId:', this.currentTokenId);
       const historicalCandles = await this.apiService.fetchHistoryCandles(tokenId);
       console.log('[SDK] Received', historicalCandles.length, 'candles');
-      this.candles = historicalCandles;
+
+      // Sort candles by timestamp
+      this.candles = historicalCandles.sort((a, b) => a.Timestamp - b.Timestamp);
+
       this.lastUpdate = new Date();
 
       // Verify token ID is still set after async operation
@@ -495,7 +498,7 @@ export class CryptoChartSDK {
 
         console.log("-----",this.candles)
 
-        // Ensure candles are sorted by timestamp (ascending)
+        // Ensure candles are sorted by timestamp
         this.candles.sort((a, b) => a.Timestamp - b.Timestamp);
         console.log(`📊 [SDK] Candles sorted, total count: ${this.candles.length}`);
       }
