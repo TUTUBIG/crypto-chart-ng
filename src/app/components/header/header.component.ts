@@ -12,7 +12,7 @@ import { AuthService } from '../../../services/auth.service';
 })
 export class HeaderComponent {
   isMobileMenuOpen = signal(false);
-  
+
   // Get authentication state from AuthService
   isLoggedIn = computed(() => this.authService.isAuthenticated());
   currentUser = computed(() => this.authService.currentUser());
@@ -24,6 +24,16 @@ export class HeaderComponent {
 
   toggleMobileMenu() {
     this.isMobileMenuOpen.update(v => !v);
+  }
+
+  navigateToMarket() {
+    this.router.navigate(['/market']);
+    this.isMobileMenuOpen.set(false);
+  }
+
+  navigateToWatch() {
+    this.router.navigate(['/watch']);
+    this.isMobileMenuOpen.set(false);
   }
 
   navigateToLogin() {

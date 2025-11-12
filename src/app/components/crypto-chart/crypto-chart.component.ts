@@ -27,10 +27,10 @@ import {
   CryptoChartSDK,
   ChartData,
   Candle,
-  RealTimeTrade,
-  ApiService
-} from '../../../sdk';
-import { formatVolume } from '../../../sdk/utils';
+  RealTimeTrade
+} from '@fipulse/crypto-chart-sdk';
+import { formatVolume } from '@fipulse/crypto-chart-sdk';
+import { AngularHttpClient } from '../../../sdk/angular-http-client';
 import { API_CONFIG } from '../../../config/api.config';
 
 @Component({
@@ -90,7 +90,7 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
   private resizeObserver: ResizeObserver | null = null;
 
   constructor(
-    private apiService: ApiService,
+    private httpClient: AngularHttpClient,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -129,7 +129,6 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
     console.log('Step 1: Creating SDK instance and WebSocket connection');
 
     this.sdk = new CryptoChartSDK(
-      this.apiService,
       {
         baseUrl: API_CONFIG.BASE_URL,
         timeouts: {
@@ -151,21 +150,22 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
       {
         maxCandles: API_CONFIG.CHART.MAX_CANDLES,
         autoScroll: true
-      }
+      },
+      this.httpClient
     );
 
     // Set up SDK callbacks
     console.log('🔧 Setting up SDK callbacks');
-    this.sdk.onChartUpdate((data) => {
+    this.sdk.onChartUpdate((data: ChartData) => {
       console.log('🔄 SDK callback triggered: onChartUpdate with', data.candles.length, 'candles');
       this.handleChartUpdate(data);
     });
-    this.sdk.onTrade((trade) => {
+    this.sdk.onTrade((trade: RealTimeTrade) => {
       console.log('🔄 SDK callback triggered: onTrade with price', trade.Price);
       this.handleTrade(trade);
     });
-    this.sdk.onError((error) => this.handleError(error));
-    this.sdk.onConnectionChange((status) => this.handleConnectionChange(status));
+    this.sdk.onError((error: string) => this.handleError(error));
+    this.sdk.onConnectionChange((status: 'connecting' | 'connected' | 'disconnected') => this.handleConnectionChange(status));
 
     // Step 2: Connect to WebSocket immediately
     console.log('Step 2: Connecting to WebSocket...');
@@ -315,7 +315,7 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
         const crosshairTime = crosshairParam.time as number;
 
         // Match crosshair time with candle timestamp (accounting for timezone conversion)
-        matchingCandle = this.chartData.candles.find(candle => {
+        matchingCandle = this.chartData.candles.find((candle: Candle) => {
           const utcTimestamp = candle.Timestamp;
           const utcDate = new Date(utcTimestamp * 1000);
           const timezoneOffsetSeconds = utcDate.getTimezoneOffset() * 60;
@@ -755,12 +755,12 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
   private updateChart(data: ChartData): void {
     if (!this.candlestickSeries || data.candles.length === 0) return;
 
-    const chartData = data.candles.map(c => this.convertCandleToChartData(c));
+    const chartData = data.candles.map((c: Candle) => this.convertCandleToChartData(c));
     this.candlestickSeries.setData(chartData);
 
     // Update volume series if enabled
     if (this.showVolume && this.volumeSeries) {
-      const volumeData = data.candles.map(c => this.convertCandleToVolumeData(c));
+      const volumeData = data.candles.map((c: Candle) => this.convertCandleToVolumeData(c));
       this.volumeSeries.setData(volumeData);
     }
 
@@ -884,7 +884,7 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
 
         // Refresh volume data with new theme colors
         if (this.chartData.candles.length > 0) {
-          const volumeData = this.chartData.candles.map(c => this.convertCandleToVolumeData(c));
+          const volumeData = this.chartData.candles.map((c: Candle) => this.convertCandleToVolumeData(c));
           this.volumeSeries.setData(volumeData);
         }
       }

@@ -66,11 +66,11 @@
   <!-- Mobile Navigation -->
   @if (isMobileMenuOpen()) {
     <nav class="nav-mobile">
-      <a routerLink="/market" routerLinkActive="active" class="nav-link-mobile" (click)="toggleMobileMenu()">
+      <a routerLink="/market" routerLinkActive="active" class="nav-link-mobile" (click)="toggleMobileMenu(); navigateToMarket()">
         <span class="nav-icon">📈</span>
         Market
       </a>
-      <a routerLink="/watch" routerLinkActive="active" class="nav-link-mobile" (click)="toggleMobileMenu()">
+      <a routerLink="/watch" routerLinkActive="active" class="nav-link-mobile" (click)="toggleMobileMenu(); navigateToWatch()">
         <span class="nav-icon">👁️</span>
         Watch
       </a>
