@@ -24,8 +24,8 @@ export class TokenListComponent implements OnInit {
   filterOptions: TokenFilterOptions = {
     search: '',
     isActive: true,
-    sortBy: 'token_symbol',
-    sortOrder: 'asc',
+    sortBy: 'daily_volume_usd',
+    sortOrder: 'desc',
     limit: 20
   };
 
