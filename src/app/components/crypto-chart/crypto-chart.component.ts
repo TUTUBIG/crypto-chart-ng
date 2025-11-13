@@ -203,22 +203,15 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
       rightPriceScale: {
         borderColor: isDark ? '#444444' : '#cccccc',
         scaleMargins: {
-          top: 0.1,
-          bottom: 0.1,
+          top: 0.3,
+          bottom: 0.2,
         },
-      },
-      leftPriceScale: {
-        visible: this.showVolume, // Show left price scale only when volume is enabled
-        borderColor: isDark ? '#444444' : '#cccccc',
       },
       timeScale: {
         borderColor: isDark ? '#444444' : '#cccccc',
         timeVisible: true,
-        secondsVisible: false,
-        rightOffset: 10,
       }
     });
-
 
     // Create candlestick series
     this.candlestickSeries = this.chart.addSeries(CandlestickSeries, {
@@ -243,7 +236,22 @@ export class CryptoChartComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     // Setup legend using lightweight-charts crosshair API
-    this.setupLegend();
+    const legend = document.createElement('div');
+    legend.style = `position: absolute;
+      left: 12px;
+      top: 12px;
+      z-index: 10;
+      font-size: 13px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.5;
+      pointer-events: none;
+      user-select: none;
+      padding: 10px 14px;
+      background: ${isDark ? 'rgba(26, 26, 26, 0.95)' : 'rgba(255, 255, 255, 0.95)'};
+      border-radius: 8px;
+      box-shadow: 0 2px 12px ${isDark ? 'rgba(0, 0, 0, 0.4)' : 'rgba(0, 0, 0, 0.15)'};
+      min-width: 180px;`;
+    containerEl.appendChild(legend);
   }
 
   private setupLegend(): void {
