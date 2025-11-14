@@ -1,7 +1,7 @@
 <div class="profile-page">
   <div class="page-header">
     <div class="container">
-      <h1 class="page-title">👤 My Profile</h1>
+      <h1 class="page-title">My Profile</h1>
       <p class="page-description">
         Manage your account settings and preferences
       </p>
@@ -33,7 +33,7 @@
       <!-- Telegram Integration -->
       <section class="section">
         <h2 class="section-title">Telegram Integration</h2>
-        
+
         @if (isTelegramLinked) {
           <!-- Telegram Account Linked State -->
           <div class="telegram-card connected">
@@ -69,7 +69,7 @@
                 </div>
               </div>
             </div>
-            
+
             @if (!isBotStarted) {
               <div class="bot-status-info info" style="margin-top: 1rem;">
                 <svg class="status-icon" viewBox="0 0 24 24" fill="currentColor">
@@ -80,11 +80,11 @@
                   <span class="status-subtext">Click the button below to start the bot on Telegram</span>
                 </div>
               </div>
-              
+
               <div class="connect-actions" style="margin-top: 1rem;">
-                <a 
-                  [href]="telegramBotLink" 
-                  target="_blank" 
+                <a
+                  [href]="telegramBotLink"
+                  target="_blank"
                   class="btn-start-bot btn-primary-action"
                   (click)="onStartBotClick()"
                   [class.polling]="isPollingBotStatus()">
@@ -132,7 +132,7 @@
                     }
                   </span>
                   <div class="step-text">
-                    <strong>Connect your account</strong> 
+                    <strong>Connect your account</strong>
                     @if (isTelegramLinked) {
                       <span class="step-status-text">✓ Completed</span>
                     } @else {
@@ -151,7 +151,7 @@
                     }
                   </span>
                   <div class="step-text">
-                    <strong>Start the bot</strong> 
+                    <strong>Start the bot</strong>
                     @if (isBotStarted) {
                       <span class="step-status-text">✓ Completed</span>
                     } @else if (isTelegramLinked) {
@@ -220,9 +220,9 @@
 
               <div class="connect-actions">
                 @if (isTelegramLinked && !isBotStarted) {
-                  <a 
-                    [href]="telegramBotLink" 
-                    target="_blank" 
+                  <a
+                    [href]="telegramBotLink"
+                    target="_blank"
                     class="btn-start-bot btn-primary-action"
                     (click)="onStartBotClick()"
                     [class.polling]="isPollingBotStatus()">

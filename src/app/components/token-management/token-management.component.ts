@@ -1,5 +1,6 @@
 import { Component, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { MatIconModule } from '@angular/material/icon';
 import { Token } from '../../../types/token';
 import { TokenListComponent } from '../token-list/token-list.component';
 import { CryptoChartComponent } from '../crypto-chart/crypto-chart.component';
@@ -8,7 +9,7 @@ import { getApiTokenId } from '../../../utils/token-utils';
 @Component({
   selector: 'app-token-management',
   standalone: true,
-  imports: [CommonModule, TokenListComponent, CryptoChartComponent],
+  imports: [CommonModule, MatIconModule, TokenListComponent, CryptoChartComponent],
   templateUrl: './token-management.component.html',
   styleUrls: ['./token-management.component.scss']
 })

@@ -1,7 +1,7 @@
 <div class="token-management">
   <!-- Header -->
   <div class="management-header">
-    <h2>🚀 Token Management & Chart Widget</h2>
+    <h2>Token Management & Chart Widget</h2>
     <p>Browse and search tokens. Click a token to select it (chart will hide). Use "Show Chart" to display the chart.</p>
   </div>
 
@@ -36,13 +36,21 @@
     <div class="widgets-panel">
       <div class="panel-header">
         <h3>Chart Widget</h3>
-        <button class="theme-switch" (click)="toggleChartTheme()" [attr.aria-label]="'Switch chart to ' + (chartTheme === 'light' ? 'dark' : 'light') + ' theme'">
-          @if (chartTheme === 'light') {
-            <span class="theme-icon">🌙</span>
-          } @else {
-            <span class="theme-icon">☀️</span>
-          }
-        </button>
+        <div class="theme-switcher-container">
+          <mat-icon class="theme-icon sun-icon" [class.active]="chartTheme === 'light'">light_mode</mat-icon>
+          <label class="theme-switcher">
+            <input
+              type="checkbox"
+              [checked]="chartTheme === 'dark'"
+              (change)="toggleChartTheme()"
+              class="theme-switcher-input"
+              [attr.aria-label]="'Switch chart to ' + (chartTheme === 'light' ? 'dark' : 'light') + ' theme'">
+            <span class="theme-switcher-slider">
+              <span class="theme-switcher-thumb"></span>
+            </span>
+          </label>
+          <mat-icon class="theme-icon moon-icon" [class.active]="chartTheme === 'dark'">dark_mode</mat-icon>
+        </div>
       </div>
 
       <div class="widgets-container">
@@ -53,7 +61,7 @@
                 [tokenId]="widgetConfig()!.tokenId"
                 [symbol]="widgetConfig()!.symbol"
                 [autoConnect]="true"
-                [theme]="'light'"
+                [theme]="chartTheme"
                 [showVolume]="true"
                 (onError)="onChartError($event)"
                 (onDataUpdate)="onChartDataUpdate($event)"

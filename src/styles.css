@@ -1,5 +1,12 @@
 /* Global Styles for FiPulse */
 
+/* Angular Material Theme */
+@import '@angular/material/prebuilt-themes/azure-blue.css';
+
+/* Material Icons */
+@import 'https://fonts.googleapis.com/icon?family=Material+Icons';
+@import 'https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap';
+
 /* Theme Variables */
 :root {
   /* Light Theme (Default) */
@@ -7,39 +14,80 @@
   --bg-secondary: #ffffff;
   --bg-tertiary: #f7fafc;
   --bg-hover: #edf2f7;
+  --bg-code: #0f1419;
+  --bg-card: #ffffff;
+  --bg-card-dark: #1a1f3a;
   
   --text-primary: #1a202c;
   --text-secondary: #4a5568;
   --text-tertiary: #718096;
+  --text-code: #d4d4d4;
+  --text-inverse: #ffffff;
   
   --border-primary: rgba(0, 0, 0, 0.1);
   --border-secondary: rgba(0, 0, 0, 0.15);
   --border-hover: rgba(0, 0, 0, 0.25);
+  --border-code: rgba(255, 255, 255, 0.05);
   
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --shadow-code: 0 4px 16px rgba(0, 0, 0, 0.3);
   
   --scrollbar-track: #e2e8f0;
   --scrollbar-thumb: #cbd5e0;
   --scrollbar-thumb-hover: #a0aec0;
 
-  /* Color System */
+  /* Primary Color System */
   --color-primary: #10b981;
   --color-primary-dark: #059669;
   --color-primary-light: rgba(16, 185, 129, 0.1);
+  --color-primary-hover: #059669;
   
+  /* Secondary Color System */
   --color-secondary: #6366f1;
   --color-secondary-dark: #4f46e5;
   --color-secondary-light: rgba(99, 102, 241, 0.1);
   
-  --color-background: #f5f7fa;
-  --color-surface: #ffffff;
-  --color-border: rgba(0, 0, 0, 0.1);
+  /* Semantic Colors */
+  --color-success: #10b981;
+  --color-success-dark: #059669;
+  --color-success-light: rgba(16, 185, 129, 0.1);
   
-  --color-text-primary: #1a202c;
-  --color-text-secondary: #4a5568;
-  --color-text-tertiary: #718096;
+  --color-error: #ef4444;
+  --color-error-dark: #dc2626;
+  --color-error-light: rgba(239, 68, 68, 0.1);
+  
+  --color-warning: #f59e0b;
+  --color-warning-dark: #d97706;
+  --color-warning-light: rgba(245, 158, 11, 0.1);
+  
+  --color-info: #3b82f6;
+  --color-info-dark: #2563eb;
+  --color-info-light: rgba(59, 130, 246, 0.1);
+  
+  /* Accent Colors */
+  --color-accent-purple: #8b5cf6;
+  --color-accent-blue: #3b82f6;
+  --color-accent-gold: #ffd700;
+  --color-accent-pink: #f093fb;
+  --color-accent-red: #f5576c;
+  
+  /* Gradient Colors */
+  --gradient-primary: linear-gradient(90deg, #10b981 0%, #3b82f6 100%);
+  --gradient-hero: linear-gradient(135deg, #ffffff 0%, #f7fafc 100%);
+  --gradient-header-light: linear-gradient(135deg, #ffffff 0%, #f7fafc 100%);
+  --gradient-header-dark: linear-gradient(135deg, #0f1419 0%, #1a1f3a 100%);
+  --gradient-theme-light: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  --gradient-theme-dark: linear-gradient(135deg, #4c63d2 0%, #1e3c72 100%);
+  
+  /* Legacy aliases for compatibility */
+  --color-background: var(--bg-primary);
+  --color-surface: var(--bg-secondary);
+  --color-border: var(--border-primary);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
 }
 
 /* Dark Theme */
@@ -48,39 +96,80 @@
   --bg-secondary: #1a1f3a;
   --bg-tertiary: #0f1419;
   --bg-hover: rgba(255, 255, 255, 0.1);
+  --bg-code: #0f1419;
+  --bg-card: #1a1f3a;
+  --bg-card-dark: #0f1419;
   
   --text-primary: #ffffff;
   --text-secondary: #d1d5db;
   --text-tertiary: #9ca3af;
+  --text-code: #d4d4d4;
+  --text-inverse: #1a202c;
   
   --border-primary: rgba(255, 255, 255, 0.05);
   --border-secondary: rgba(255, 255, 255, 0.1);
   --border-hover: rgba(255, 255, 255, 0.2);
+  --border-code: rgba(255, 255, 255, 0.05);
   
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-code: 0 4px 16px rgba(0, 0, 0, 0.5);
   
   --scrollbar-track: #1a1f3a;
   --scrollbar-thumb: #374151;
   --scrollbar-thumb-hover: #4b5563;
 
-  /* Color System (Dark) */
+  /* Primary Color System (Dark) */
   --color-primary: #10b981;
   --color-primary-dark: #059669;
   --color-primary-light: rgba(16, 185, 129, 0.2);
+  --color-primary-hover: #059669;
   
+  /* Secondary Color System (Dark) */
   --color-secondary: #6366f1;
   --color-secondary-dark: #4f46e5;
   --color-secondary-light: rgba(99, 102, 241, 0.2);
   
-  --color-background: #0a0e27;
-  --color-surface: #1a1f3a;
-  --color-border: rgba(255, 255, 255, 0.1);
+  /* Semantic Colors (Dark) */
+  --color-success: #10b981;
+  --color-success-dark: #059669;
+  --color-success-light: rgba(16, 185, 129, 0.2);
   
-  --color-text-primary: #ffffff;
-  --color-text-secondary: #d1d5db;
-  --color-text-tertiary: #9ca3af;
+  --color-error: #ef4444;
+  --color-error-dark: #dc2626;
+  --color-error-light: rgba(239, 68, 68, 0.2);
+  
+  --color-warning: #f59e0b;
+  --color-warning-dark: #d97706;
+  --color-warning-light: rgba(245, 158, 11, 0.2);
+  
+  --color-info: #3b82f6;
+  --color-info-dark: #2563eb;
+  --color-info-light: rgba(59, 130, 246, 0.2);
+  
+  /* Accent Colors (same for both themes) */
+  --color-accent-purple: #8b5cf6;
+  --color-accent-blue: #3b82f6;
+  --color-accent-gold: #ffd700;
+  --color-accent-pink: #f093fb;
+  --color-accent-red: #f5576c;
+  
+  /* Gradient Colors (Dark) */
+  --gradient-primary: linear-gradient(90deg, #10b981 0%, #3b82f6 100%);
+  --gradient-hero: linear-gradient(135deg, #0f1419 0%, #1a1f3a 100%);
+  --gradient-header-light: linear-gradient(135deg, #0f1419 0%, #1a1f3a 100%);
+  --gradient-header-dark: linear-gradient(135deg, #0f1419 0%, #1a1f3a 100%);
+  --gradient-theme-light: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  --gradient-theme-dark: linear-gradient(135deg, #4c63d2 0%, #1e3c72 100%);
+  
+  /* Legacy aliases for compatibility */
+  --color-background: var(--bg-primary);
+  --color-surface: var(--bg-secondary);
+  --color-border: var(--border-primary);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
 }
 
 * {
@@ -91,7 +180,7 @@
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -100,6 +189,16 @@ body {
   color: var(--text-primary);
   line-height: 1.6;
   transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Material Design Overrides */
+.mat-mdc-form-field {
+  width: 100%;
+}
+
+.mat-mdc-button, .mat-mdc-raised-button, .mat-mdc-outlined-button {
+  text-transform: none;
+  font-weight: 500;
 }
 
 html, body {

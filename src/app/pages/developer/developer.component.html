@@ -1,7 +1,7 @@
 <div class="developer-page">
   <div class="page-header">
     <div class="container">
-      <h1 class="page-title">💻 Developer Hub</h1>
+      <h1 class="page-title">Developer Hub</h1>
       <p class="page-description">
         Build powerful crypto applications with our SDK and Widget
       </p>
@@ -28,112 +28,107 @@
               <div class="token-presets">
                 <button
                   *ngFor="let preset of tokenPresets"
+                  mat-raised-button
                   class="preset-btn"
                   [class.active]="widgetParams.tokenId === preset.id"
                   (click)="selectTokenPreset(preset)">
-                  {{ preset.name }}
+                  <img
+                    [src]="preset.logo"
+                    [alt]="preset.name"
+                    class="token-logo-image"
+                    (error)="$event.target.src='https://cdn.fipulse.xyz/media/BTC.png'">
+                  <span class="preset-name">{{ preset.name }}</span>
                 </button>
               </div>
-              <input
-                type="text"
-                class="control-input"
-                [(ngModel)]="widgetParams.tokenId"
-                (ngModelChange)="onParamChange()"
-                placeholder="Token ID">
+              <mat-form-field appearance="outline">
+                <mat-label>Token ID (ChainID + Token Address)</mat-label>
+                <input
+                  matInput
+                  [(ngModel)]="widgetParams.tokenId"
+                  (ngModelChange)="onParamChange()"
+                  placeholder="1-2260fac5e5542a773aa44fbcfedf7c193bc2c599">
+              </mat-form-field>
             </div>
 
             <!-- Symbol -->
             <div class="control-group">
-              <label class="control-label">Symbol</label>
-              <input
-                type="text"
-                class="control-input"
-                [(ngModel)]="widgetParams.symbol"
-                (ngModelChange)="onParamChange()"
-                placeholder="BTC/USDT">
+              <mat-form-field appearance="outline">
+                <mat-label>Symbol</mat-label>
+                <input
+                  matInput
+                  [(ngModel)]="widgetParams.symbol"
+                  (ngModelChange)="onParamChange()"
+                  placeholder="WBTC/USDT">
+              </mat-form-field>
             </div>
 
             <!-- Price Series Type -->
             <div class="control-group">
               <label class="control-label">Price Series Type</label>
-              <div class="radio-group">
-                <label class="radio-label">
-                  <input
-                    type="radio"
-                    value="candle"
-                    [(ngModel)]="widgetParams.priceSeriesType"
-                    (change)="onParamChange()">
-                  <span>Candlestick</span>
-                </label>
-                <label class="radio-label">
-                  <input
-                    type="radio"
-                    value="line"
-                    [(ngModel)]="widgetParams.priceSeriesType"
-                    (change)="onParamChange()">
-                  <span>Line</span>
-                </label>
-              </div>
+              <mat-radio-group
+                [(ngModel)]="widgetParams.priceSeriesType"
+                (ngModelChange)="onParamChange()"
+                class="radio-group">
+                <mat-radio-button value="candle" class="radio-option">Candlestick</mat-radio-button>
+                <mat-radio-button value="line" class="radio-option">Line</mat-radio-button>
+              </mat-radio-group>
             </div>
 
-            <!-- Theme -->
+            <!-- Theme Toggle -->
             <div class="control-group">
               <label class="control-label">Theme</label>
-              <div class="radio-group">
-                <label class="radio-label">
+              <div class="theme-switcher-container">
+                <mat-icon class="theme-icon sun-icon" [class.active]="widgetParams.theme === 'light'">light_mode</mat-icon>
+                <label class="theme-switcher">
                   <input
-                    type="radio"
-                    value="light"
-                    [(ngModel)]="widgetParams.theme"
-                    (change)="onParamChange()">
-                  <span>Light</span>
+                    type="checkbox"
+                    [checked]="widgetParams.theme === 'dark'"
+                    (change)="toggleTheme()"
+                    class="theme-switcher-input">
+                  <span class="theme-switcher-slider">
+                    <span class="theme-switcher-thumb"></span>
+                  </span>
                 </label>
-                <label class="radio-label">
-                  <input
-                    type="radio"
-                    value="dark"
-                    [(ngModel)]="widgetParams.theme"
-                    (change)="onParamChange()">
-                  <span>Dark</span>
-                </label>
+                <mat-icon class="theme-icon moon-icon" [class.active]="widgetParams.theme === 'dark'">dark_mode</mat-icon>
               </div>
             </div>
 
             <!-- Legend Style -->
             <div class="control-group">
-              <label class="control-label">Legend Style</label>
-              <select
-                class="control-select"
-                [(ngModel)]="widgetParams.legendStyle"
-                (ngModelChange)="onParamChange()">
-                <option value="none">None</option>
-                <option value="simple">Simple</option>
-                <option value="complex">Complex</option>
-              </select>
+              <mat-form-field appearance="outline">
+                <mat-label>Legend Style</mat-label>
+                <mat-select
+                  [(ngModel)]="widgetParams.legendStyle"
+                  (ngModelChange)="onParamChange()">
+                  <mat-option value="disable">Disable</mat-option>
+                  <mat-option value="basic">Basic</mat-option>
+                  <mat-option value="detailed">Detailed</mat-option>
+                </mat-select>
+              </mat-form-field>
             </div>
 
             <!-- Show Volume -->
             <div class="control-group">
-              <label class="control-label">
-                <input
-                  type="checkbox"
-                  [(ngModel)]="widgetParams.showVolume"
-                  (ngModelChange)="onParamChange()">
-                <span>Show Volume</span>
-              </label>
+              <mat-checkbox
+                [(ngModel)]="widgetParams.showVolume"
+                (ngModelChange)="onParamChange()">
+                Show Volume
+              </mat-checkbox>
             </div>
 
             <!-- Height -->
             <div class="control-group">
-              <label class="control-label">Height (px)</label>
-              <input
-                type="number"
-                class="control-input"
-                [(ngModel)]="widgetParams.height"
-                (ngModelChange)="onParamChange()"
-                min="300"
-                max="1000"
-                step="50">
+              <mat-form-field appearance="outline">
+                <mat-label>Height (px)</mat-label>
+                <input
+                  matInput
+                  type="number"
+                  [(ngModel)]="widgetParams.height"
+                  (ngModelChange)="onParamChange()"
+                  min="300"
+                  max="1000"
+                  step="50">
+              </mat-form-field>
             </div>
           </div>
 
@@ -157,8 +152,13 @@
           <pre><code>{{ widgetExample }}</code></pre>
         </div>
         <div class="code-actions">
-          <button class="btn-copy" (click)="copyCodeToClipboard()" title="Copy code to clipboard">
-            📋 Copy Code
+          <button
+            mat-raised-button
+            color="primary"
+            (click)="copyCodeToClipboard()"
+            [matTooltip]="'Copy code to clipboard'">
+            <mat-icon>content_copy</mat-icon>
+            Copy Code
           </button>
         </div>
       </section>
@@ -176,7 +176,10 @@
 
       <!-- SDK Code Example -->
       <section class="section">
-        <h2 class="section-title">💻 SDK Usage Example</h2>
+        <h2 class="section-title">Complete SDK Usage Example</h2>
+        <p class="section-description">
+          Full example showing how to use the Extended SDK for both token listing and chart functionality.
+        </p>
         <div class="code-block">
           <pre><code>{{ sdkExample }}</code></pre>
         </div>
@@ -186,7 +189,7 @@
       <section class="section cta-section">
         <h2>Ready to build?</h2>
         <p>Get your API key and start building in minutes</p>
-        <a routerLink="/dashboard" class="btn btn-primary btn-large">Get API Key</a>
+        <a routerLink="/dashboard" mat-raised-button color="primary" class="cta-button">Get API Key</a>
       </section>
 
     </div>

@@ -2,11 +2,35 @@ import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, OnDestroy } fr
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatRadioModule } from '@angular/material/radio';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatCardModule } from '@angular/material/card';
+import { MatTabsModule } from '@angular/material/tabs';
+import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 @Component({
   selector: 'app-developer',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [
+    CommonModule,
+    RouterModule,
+    FormsModule,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatRadioModule,
+    MatCheckboxModule,
+    MatCardModule,
+    MatTabsModule,
+    MatIconModule,
+    MatTooltipModule
+  ],
   templateUrl: './developer.component.html',
   styleUrls: ['./developer.component.scss']
 })
@@ -20,14 +44,14 @@ export class DeveloperComponent implements OnInit, AfterViewInit, OnDestroy {
     showVolume: true,
     priceSeriesType: 'candle' as 'candle' | 'line',
     theme: 'light' as 'light' | 'dark',
-    legendStyle: 'complex' as 'none' | 'simple' | 'complex',
+    legendStyle: 'detailed' as 'disable' | 'basic' | 'detailed',
     height: 500
   };
 
   // Preset token options
   tokenPresets = [
-    { id: '1-2260fac5e5542a773aa44fbcfedf7c193bc2c599', symbol: 'WBTC/USDT', name: 'Bitcoin' },
-    { id: '1-c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2', symbol: 'WETH/USDT', name: 'Ethereum' },
+    { id: '1-2260fac5e5542a773aa44fbcfedf7c193bc2c599', symbol: 'WBTC/USDT', name: 'Bitcoin', logo: 'https://cdn.fipulse.xyz/media/BTC.png' },
+    { id: '1-c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2', symbol: 'WETH/USDT', name: 'Ethereum', logo: 'https://cdn.fipulse.xyz/media/ETH.png' },
   ];
 
   widgetInstance: any = null;
@@ -59,7 +83,7 @@ export class DeveloperComponent implements OnInit, AfterViewInit, OnDestroy {
     }
 
     const script = document.createElement('script');
-    script.src = 'https://widget.fipulse.xyz/widget.iife.js';
+    script.src = 'https://cdn.fipulse.xyz/widget.iife.js';
     script.onload = () => {
       this.widgetScriptLoaded = true;
       if (this.widgetContainer) {
@@ -127,6 +151,11 @@ export class DeveloperComponent implements OnInit, AfterViewInit, OnDestroy {
     this.createWidget();
   }
 
+  toggleTheme(): void {
+    this.widgetParams.theme = this.widgetParams.theme === 'light' ? 'dark' : 'light';
+    this.onParamChange();
+  }
+
   copyCodeToClipboard(): void {
     const code = this.widgetExample;
     navigator.clipboard.writeText(code).then(() => {
@@ -150,9 +179,9 @@ export class DeveloperComponent implements OnInit, AfterViewInit, OnDestroy {
   sdkBookHandling = `
 The SDK manages a "data book" - a collection of historical candle data that is:
 
-1. **Fetched via HTTP**: Initial historical data is loaded via REST API
-   - Endpoint: GET /candle-chart?tokenId={tokenId}
-   - Returns: Array of candle objects with OHLCV data
+1. **Fetched via SDK**: Initial historical data is loaded using SDK methods
+   - Method: \`sdk.initialize(tokenId, autoLoad)\`
+   - Returns: ChartData object with array of candle objects (OHLCV data)
 
 2. **Maintained in Memory**: The SDK keeps candles in a ChartData object:
    \`\`\`typescript
@@ -179,9 +208,9 @@ The SDK manages a "data book" - a collection of historical candle data that is:
 
 5. **Data Flow**:
    \`\`\`
-   HTTP Request → Historical Candles → ChartData.candles[]
+   SDK.initialize() → Historical Candles → ChartData.candles[]
                     ↓
-   WebSocket → Real-time Trades → Update Latest Candle
+   SDK.subscribe() → WebSocket → Real-time Trades → Update Latest Candle
                     ↓
    onChartUpdate() → Chart Rendering
    \`\`\`
@@ -193,7 +222,8 @@ The SDK manages a "data book" - a collection of historical candle data that is:
    - Connection state management
   `;
 
-  sdkExample = `import { CryptoChartSDK, ChartData, RealTimeTrade } from '@fipulse/crypto-chart-sdk';
+  sdkExample = `
+import { CryptoChartSDK, ChartData, RealTimeTrade } from '@fipulse/crypto-chart-sdk';
 
 // Initialize SDK
 const sdk = new CryptoChartSDK(
@@ -237,7 +267,8 @@ sdk.onTrade((trade: RealTimeTrade) => {
 // Connect and subscribe
 sdk.connectWebSocket();
 await sdk.initialize(tokenId, true);
-sdk.subscribe(tokenId);`;
+sdk.subscribe(tokenId);
+`;
 
   // Dynamic widget example that syncs with playground params
   get widgetExample(): string {
@@ -265,7 +296,7 @@ sdk.subscribe(tokenId);`;
       options.push(`    theme: '${params.theme}',`);
     }
 
-    if (params.legendStyle && params.legendStyle !== 'none') {
+    if (params.legendStyle && params.legendStyle !== 'disable') {
       options.push(`    legendStyle: '${params.legendStyle}',`);
     }
 
@@ -282,7 +313,7 @@ sdk.subscribe(tokenId);`;
     const optionsCode = options.length > 0 ? options.join('\n') : '    // Add your options here';
 
     return `<!-- Load widget script -->
-<script src="https://widget.fipulse.xyz/widget.iife.js"></script>
+<script src="https://cdn.fipulse.xyz/widget.iife.js"></script>
 
 <!-- Create widget -->
 <script>

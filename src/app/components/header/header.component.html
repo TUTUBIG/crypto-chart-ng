@@ -3,7 +3,6 @@
     <!-- Logo -->
     <div class="logo">
       <a routerLink="/" class="logo-link">
-        <span class="logo-icon">⚡</span>
         <span class="logo-text">FiPulse</span>
       </a>
     </div>
@@ -11,24 +10,19 @@
     <!-- Desktop Navigation -->
     <nav class="nav-desktop">
       <a routerLink="/market" routerLinkActive="active" class="nav-link">
-        <span class="nav-icon">📈</span>
         Market
       </a>
       <a routerLink="/watch" routerLinkActive="active" class="nav-link">
-        <span class="nav-icon">👁️</span>
         Watch
       </a>
       <a routerLink="/developer" routerLinkActive="active" class="nav-link">
-        <span class="nav-icon">💻</span>
         Developer
       </a>
       @if (isLoggedIn()) {
         <a routerLink="/dashboard" routerLinkActive="active" class="nav-link">
-          <span class="nav-icon">📊</span>
           Dashboard
         </a>
         <a routerLink="/me" routerLinkActive="active" class="nav-link">
-          <span class="nav-icon">👤</span>
           Me
         </a>
       }
